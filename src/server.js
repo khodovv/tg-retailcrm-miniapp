@@ -24,22 +24,36 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const bot = createBot();
 app.locals.bot = bot;
 
-// Вебхук
-const secret = process.env.WEBHOOK_SECRET || 'secret';
+// Вебхук (надёжная регистрация маршрута)
+const secret = (process.env.WEBHOOK_SECRET || 'secret').trim();
 const webhookPath = `/tg/webhook/${secret}`;
-app.use(webhookPath, bot.webhookCallback(webhookPath));
 
+// JSON-парсер у тебя уже подключён выше: app.use(bodyParser.json(...))
+// поэтому отдельно express.json() добавлять не нужно.
+
+// Явный обработчик POST по пути вебхука
+app.post(webhookPath, (req, res) => {
+  try {
+    console.log('Webhook hit at', webhookPath);
+    app.locals.bot.handleUpdate(req.body, res);
+  } catch (err) {
+    console.error('Webhook error', err);
+    res.sendStatus(500);
+  }
+});
+
+// Устанавливаем вебхук при старте
 (async () => {
-  // Установим вебхук при старте
   const publicUrl = process.env.PUBLIC_URL;
   if (publicUrl) {
     const url = `${publicUrl}${webhookPath}`;
-    await bot.telegram.setWebhook(url);
+    await app.locals.bot.telegram.setWebhook(url);
     console.log('Webhook set to', url);
   } else {
     console.warn('PUBLIC_URL не задан — вебхук не будет установлен.');
   }
 })().catch(console.error);
+
 
 // API
 app.use('/api/catalog', catalogRouter);
