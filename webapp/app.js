@@ -27,6 +27,32 @@ const payBtn = document.getElementById('payBtn');
 const API = (path) => `${location.origin}/api${path}`;
 let state = { view: 'home', items: [], products: [] };
 
+// --- helpers ---
+const uniq = (arr) => [...new Set(arr.filter(Boolean))];
+
+const norm = (u) => {
+  if (!u) return null;
+  if (u.startsWith('http')) return u;
+  if (u.startsWith('//')) return 'https:' + u;
+  const host = new URL(location.origin);
+  return `${host.protocol}//${host.host}${u.startsWith('/') ? '' : '/'}${u}`;
+};
+
+// извлекаем свойства оффера "Размер/Цвет"
+function offerProps(offer) {
+  const p = (offer.properties || offer.props || {});
+  const entries = Object.entries(p).map(([k, v]) => [String(k).toLowerCase(), v]);
+  const find = (keys) => {
+    const i = entries.findIndex(([k]) => keys.includes(k));
+    return i > -1 ? entries[i][1] : undefined;
+  };
+  return {
+    size: p.size || p.Размер || p['размер'] || find(['size','размер','рост']),
+    color: p.color || p.Цвет || p['цвет'] || find(['color','цвет','колор'])
+  };
+}
+
+
 function show(el){ el?.classList.remove('hidden'); }
 function hide(el){ el?.classList.add('hidden'); }
 function updateCartBadge() {
