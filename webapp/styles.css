@@ -1,14 +1,49 @@
 * { box-sizing: border-box; }
-body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #111; color: #fff; }
-header { display: flex; gap: 12px; padding: 12px; align-items: center; position: sticky; top:0; background:#111; }
-h1 { font-size: 18px; margin: 0; }
-#search { flex: 1; padding: 10px; border-radius: 10px; border: none; outline: none; }
-#list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; }
-.card { background:#1b1b1b; border-radius: 16px; overflow: hidden; display:flex; flex-direction:column; }
-.card img { width: 100%; height: 160px; object-fit: cover; background:#222; }
-.card .body { padding: 10px; display:flex; flex-direction:column; gap:8px; }
-.card h3 { margin:0; font-size: 14px; }
+:root { --bg:#0f0f10; --card:#17171a; --muted:#a9a9b0; --white:#fff; --accent:#ffffff; }
+html,body { height:100%; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:var(--white); }
+
+.hidden { display:none !important; }
+
+/* Home (обложка) */
+#home { min-height: 100dvh; display:flex; flex-direction:column; }
+.hero {
+  position: relative; flex:1; display:flex; align-items:flex-end;
+  background: #111 center/cover no-repeat;
+  border-radius: 0 0 24px 24px; overflow:hidden;
+}
+.hero::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.65) 70%); }
+.hero-inner { position:relative; z-index:1; padding: 28px 20px 32px; width:100%; }
+.brand { font-weight:700; font-size:28px; letter-spacing:.5px; }
+.subtitle { margin-top:8px; color:var(--muted); }
+.cta { margin-top:16px; display:flex; gap:10px; }
+.btn {
+  background:var(--white); color:#111; border:none; border-radius:12px; padding:12px 16px; font-weight:700;
+}
+.btn-outline {
+  background:transparent; color:var(--white); border:1px solid rgba(255,255,255,.25);
+  backdrop-filter: blur(6px);
+}
+
+.features { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:16px; }
+.feature { background:var(--card); border-radius:16px; padding:14px; color:#d9d9de; font-size:14px; }
+
+/* Каталог */
+#header { display:flex; gap:12px; padding:12px; align-items:center; position:sticky; top:0; background:var(--bg); z-index:10; }
+#header h1 { font-size:18px; margin:0; }
+#header .back { background:transparent; color:var(--white); border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:8px 10px; }
+#search { flex:1; padding:10px; border-radius:10px; border:none; outline:none; background:#1c1c20; color:#fff; }
+
+.chips { display:flex; gap:8px; padding: 0 12px 8px; flex-wrap:wrap; }
+.chip { background:#1c1c20; border:1px solid rgba(255,255,255,.12); color:#fff; padding:8px 12px; border-radius:999px; font-size:13px; }
+
+#list { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:12px; }
+.card { background:#1b1b1f; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; }
+.card img { width:100%; height:160px; object-fit:cover; background:#222; }
+.card .body { padding:10px; display:flex; flex-direction:column; gap:8px; }
+.card h3 { margin:0; font-size:14px; line-height:1.25; }
 .price { opacity:.9; }
-select, button { padding:10px; border-radius: 10px; border:none; }
-footer { position: sticky; bottom: 0; display:flex; gap:10px; padding: 12px; background:#111; }
-button { background:#ffffff; color:#111; font-weight:600; }
+select, button { padding:10px; border-radius:10px; border:none; }
+button { background:var(--white); color:#111; font-weight:600; }
+
+#footer { position:sticky; bottom:0; display:flex; gap:10px; padding:12px; background:var(--bg); }
