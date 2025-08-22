@@ -310,11 +310,12 @@ async function loadCatalog(q='') {
 
 // === EVENTS ===
 searchEl.addEventListener('input', (e) => loadCatalog(e.target.value.trim()));
-backBtn.addEventListener('click', () => renderHome());
-cartBtn.addEventListener('click', () => {
-  const count = state.items.reduce((s,i)=>s+i.qty,0);
-  alert(`В корзине позиций: ${count}`);
+backBtn.addEventListener('click', () => {
+  if (state.view === 'cart') renderCatalog(); // из корзины — обратно в каталог
+  else renderHome();                            // из каталога — на обложку
 });
+cartBtn.addEventListener('click', () => renderCart());
+
 payBtn.addEventListener('click', async () => {
   if (state.items.length === 0) return alert('Корзина пуста');
   const userId = tg?.initDataUnsafe?.user?.id;
