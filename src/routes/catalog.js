@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
     const rawProducts = data?.products || data?.items || [];
 
     const products = rawProducts.map((p) => {
-      // Картинки: поддержим разные поля, приводим к [{ url }]
+      // Картинки -> [{ url }]
       const images =
         (p.images || p.media || [])
           .map((img) => ({
@@ -38,10 +38,9 @@ router.get('/', async (req, res) => {
           }))
           .filter((i) => !!i.url) || [];
 
-      // Офферы/варианты: приводим к общему виду
+      // Офферы/варианты в едином формате
       const rawOffers = p.offers || p.variants || p.offer || [];
       const offers = rawOffers.map((o) => {
-        // properties может быть объектом или массивом {name/value}
         let props = o.properties || o.props || o.attributes || {};
         if (Array.isArray(props)) {
           props = Object.fromEntries(
@@ -51,11 +50,7 @@ router.get('/', async (req, res) => {
         return {
           externalId: o.externalId || o.xmlId || o.id,
           xmlId: o.xmlId,
-          price:
-            o.price ??
-            o.prices?.price ??
-            o.purchasePrice ??
-            null,
+          price: o.price ?? o.prices?.price ?? o.purchasePrice ?? null,
           quantity: o.quantity ?? o.stock ?? 0,
           properties: props || {},
         };
@@ -80,7 +75,7 @@ router.get('/', async (req, res) => {
     res.json({
       ok: true,
       products,
-      page: data?.page ?? Number(page) || 1,
+      page: data?.page ?? (Number(page) || 1),   // важно: скобки
       total: data?.total ?? products.length,
     });
   } catch (e) {
