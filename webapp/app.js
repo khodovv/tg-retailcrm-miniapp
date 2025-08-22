@@ -239,6 +239,57 @@ function productCard(p) {
   return card;
 }
 
+function renderCart() {
+  state.view = 'cart';
+  headerEl.querySelector('h1').textContent = 'Корзина';
+  show(headerEl); show(listEl); show(footerEl); hide(chipsEl);
+  backBtn?.classList.remove('hidden');
+  listEl.innerHTML = '';
+
+  const wrap = document.createElement('div'); wrap.className='cart';
+  let total = 0;
+
+  state.items.forEach((it, idx) => {
+    total += (it.price || 0) * (it.qty || 1);
+    const row = document.createElement('div');
+    row.className = 'cart-item';
+
+    const im = document.createElement('img');
+    im.src = it.image || 'https://via.placeholder.com/200';
+    row.appendChild(im);
+
+    const info = document.createElement('div');
+    const h = document.createElement('h4'); h.textContent = it.productName || 'Товар';
+    const meta = document.createElement('div'); meta.className='muted';
+    meta.textContent = [it.color && `Цвет: ${it.color}`, it.size && `Размер: ${it.size}`].filter(Boolean).join(' • ');
+    info.appendChild(h); info.appendChild(meta);
+
+    const qty = document.createElement('div'); qty.className='qty';
+    const minus = document.createElement('button'); minus.textContent='−';
+    const num = document.createElement('span'); num.textContent=String(it.qty);
+    const plus = document.createElement('button'); plus.textContent='+';
+    const del = document.createElement('button'); del.textContent='Удалить';
+
+    minus.onclick = () => { if (it.qty>1) { it.qty--; num.textContent=it.qty; renderCart(); } };
+    plus.onclick = () => { it.qty++; num.textContent=it.qty; renderCart(); };
+    del.onclick = () => { state.items.splice(idx,1); renderCart(); updateCartBadge(); };
+
+    qty.appendChild(minus); qty.appendChild(num); qty.appendChild(plus); qty.appendChild(del);
+
+    row.appendChild(info);
+    row.appendChild(qty);
+    wrap.appendChild(row);
+  });
+
+  const totalRow = document.createElement('div'); totalRow.className='cart-total';
+  totalRow.innerHTML = `<span class="badge">Позиций: ${state.items.reduce((s,i)=>s+i.qty,0)}</span><strong>${total.toLocaleString('ru-RU')} ₽</strong>`;
+  wrap.appendChild(totalRow);
+
+  listEl.appendChild(wrap);
+}
+
+cartBtn.addEventListener('click', () => renderCart());
+
 
 async function loadCatalog(q='') {
   const url = new URL(API('/catalog'));
