@@ -1,21 +1,90 @@
+// Telegram WebApp
 const tg = window.Telegram?.WebApp;
-if (tg) tg.expand();
+try { tg?.ready(); tg?.expand(); } catch(e){}
 
-const API = (path) => `${location.origin}/api${path}`;
+// === БРЕНД-КОНСТАНТЫ (можешь поменять) ===
+const BRAND_TITLE = "Alexandra Talalay";
+const BRAND_SUBTITLE = "Минимализм с нотками old money";
+const HERO_IMAGE_URL = "https://alexandratalalay.com/local/templates/.default/img/social_share.jpg"; // поставь красивый баннер
+const PROMO_CHIPS = [
+  { label: "Новинки", q: "" },
+  { label: "Платья", q: "плать" },
+  { label: "Костюмы", q: "костюм" },
+  { label: "Трикотаж", q: "трикот" }
+];
 
-let state = {
-  items: [], // {offerExternalId, qty}
-  products: [],
-};
-
+// === ЭЛЕМЕНТЫ ===
+const homeEl = document.getElementById('home');
+const headerEl = document.getElementById('header');
+const backBtn = document.getElementById('backBtn');
+const chipsEl = document.getElementById('chips');
 const listEl = document.getElementById('list');
+const footerEl = document.getElementById('footer');
 const searchEl = document.getElementById('search');
 const cartBtn = document.getElementById('cartBtn');
 const payBtn = document.getElementById('payBtn');
 
+const API = (path) => `${location.origin}/api${path}`;
+let state = { view: 'home', items: [], products: [] };
+
+function show(el){ el?.classList.remove('hidden'); }
+function hide(el){ el?.classList.add('hidden'); }
 function updateCartBadge() {
   const count = state.items.reduce((s,i)=>s+i.qty,0);
   cartBtn.textContent = `Корзина (${count})`;
+}
+
+// === HOME ===
+function renderHome() {
+  state.view = 'home';
+  hide(headerEl); hide(chipsEl); hide(listEl); hide(footerEl);
+  backBtn?.classList.add('hidden');
+  if (tg?.BackButton) tg.BackButton.hide();
+
+  homeEl.innerHTML = `
+    <div class="hero" style="background-image:url('${HERO_IMAGE_URL}');">
+      <div class="hero-inner">
+        <div class="brand">${BRAND_TITLE}</div>
+        <div class="subtitle">${BRAND_SUBTITLE}</div>
+        <div class="cta">
+          <button id="openCatalog" class="btn">Смотреть каталог</button>
+          <button id="openCart" class="btn btn-outline">Корзина (${state.items.reduce((s,i)=>s+i.qty,0)})</button>
+        </div>
+      </div>
+    </div>
+    <div class="features">
+      <div class="feature">Собственное производство</div>
+      <div class="feature">Доставка по РФ</div>
+      <div class="feature">Оплата в Telegram</div>
+      <div class="feature">Поддержка 7/7</div>
+    </div>
+  `;
+  document.getElementById('openCatalog').onclick = () => renderCatalog();
+  document.getElementById('openCart').onclick = () => alert(`В корзине позиций: ${state.items.reduce((s,i)=>s+i.qty,0)}`);
+}
+
+// === CATALOG ===
+function renderChips() {
+  chipsEl.innerHTML = '';
+  PROMO_CHIPS.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = c.label;
+    b.onclick = () => { searchEl.value = c.q; loadCatalog(c.q); };
+    chipsEl.appendChild(b);
+  });
+}
+
+function renderCatalog() {
+  state.view = 'catalog';
+  show(headerEl); show(chipsEl); show(listEl); show(footerEl);
+  renderChips();
+  backBtn?.classList.remove('hidden');
+  if (tg?.BackButton) {
+    tg.BackButton.show();
+    tg.BackButton.onClick(() => renderHome());
+  }
+  loadCatalog(searchEl.value.trim());
 }
 
 function productCard(p) {
@@ -28,6 +97,7 @@ function productCard(p) {
 
   const img = document.createElement('img');
   img.src = imgUrl;
+  img.alt = p.name;
   card.appendChild(img);
 
   const body = document.createElement('div');
@@ -42,7 +112,6 @@ function productCard(p) {
   price.textContent = `${offer.price ?? '-'} ₽`;
   body.appendChild(price);
 
-  // Кол-во
   const qtySel = document.createElement('select');
   for (let q=1;q<=5;q++){ 
     const opt=document.createElement('option');
@@ -52,7 +121,7 @@ function productCard(p) {
   body.appendChild(qtySel);
 
   const addBtn = document.createElement('button');
-  addBtn.textContent = 'Добавить в корзину';
+  addBtn.textContent = 'В корзину';
   addBtn.onclick = () => {
     state.items.push({ offerExternalId, qty: parseInt(qtySel.value,10) });
     updateCartBadge();
@@ -69,45 +138,44 @@ async function loadCatalog(q='') {
   if (q) url.searchParams.set('query', q);
   const res = await fetch(url);
   const data = await res.json();
-  if (data.ok) {
+  listEl.innerHTML = '';
+  if (data.ok && data.products?.length) {
     state.products = data.products;
-    listEl.innerHTML = '';
     data.products.forEach(p => listEl.appendChild(productCard(p)));
+  } else {
+    const empty = document.createElement('div');
+    empty.style.padding = '20px';
+    empty.textContent = 'Ничего не найдено.';
+    listEl.appendChild(empty);
   }
 }
 
-searchEl.addEventListener('input', (e) => {
-  const q = e.target.value.trim();
-  loadCatalog(q);
-});
-
+// === EVENTS ===
+searchEl.addEventListener('input', (e) => loadCatalog(e.target.value.trim()));
+backBtn.addEventListener('click', () => renderHome());
 cartBtn.addEventListener('click', () => {
   const count = state.items.reduce((s,i)=>s+i.qty,0);
   alert(`В корзине позиций: ${count}`);
 });
-
 payBtn.addEventListener('click', async () => {
   if (state.items.length === 0) return alert('Корзина пуста');
   const userId = tg?.initDataUnsafe?.user?.id;
   if (!userId) return alert('Откройте Mini App из чата с ботом');
 
   const res = await fetch(API('/checkout'), {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      userId,
-      items: state.items
-    })
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ userId, items: state.items })
   });
   const data = await res.json();
   if (data.ok) {
-    alert('Счёт отправлен в чат с ботом. Откройте Telegram-диалог и оплатите.');
-    state.items = [];
-    updateCartBadge();
+    alert('Счёт отправлен в чат с ботом. Откройте диалог и оплатите.');
+    state.items = []; updateCartBadge();
   } else {
-    alert('Ошибка: ' + (data.error || 'Не удалось сформировать платеж'));
+    alert('Ошибка: ' + (data.error || 'Не удалось сформировать платёж'));
   }
 });
 
+// === START ===
 updateCartBadge();
-loadCatalog();
+renderHome();
