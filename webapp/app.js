@@ -114,9 +114,46 @@ function renderCatalog() {
 }
 
 function productCard(p) {
-  const imgUrl = p.images?.[0]?.url || 'https://via.placeholder.com/600x800?text=Alexandra+Talalay';
-  const offer = p.offers?.[0] || {};
-  const offerExternalId = offer.externalId || offer.xmlId || (p.id+':default');
+  // локальные хелперы (чтобы всё работало без доп. правок)
+  const uniq = (arr) => [...new Set(arr.filter(Boolean))];
+  const norm = (u) => {
+    if (!u) return null;
+    if (u.startsWith('http')) return u;
+    if (u.startsWith('//')) return 'https:' + u;
+    const host = new URL(location.origin);
+    return `${host.protocol}//${host.host}${u.startsWith('/') ? '' : '/'}${u}`;
+  };
+  const offerProps = (offer) => {
+    const props = offer?.properties || offer?.props || {};
+    const entries = Object.entries(props).map(([k,v]) => [String(k).toLowerCase(), v]);
+    const find = (keys) => {
+      const i = entries.findIndex(([k]) => keys.includes(k));
+      return i > -1 ? entries[i][1] : undefined;
+    };
+    return {
+      size: props.size || props.Размер || props['размер'] || find(['size','размер','рост']),
+      color: props.color || props.Цвет || props['цвет'] || find(['color','цвет','колор'])
+    };
+  };
+
+  const images = (p.images || []).map(i => norm(i?.url || i)).filter(Boolean);
+  const imgUrl = images[0] || 'https://via.placeholder.com/600x800?text=Alexandra+Talalay';
+  const offers = p.offers || [];
+
+  // списки вариантов
+  const sizes  = uniq(offers.map(o => offerProps(o).size));
+  const colors = uniq(offers.map(o => offerProps(o).color));
+  let selected = { size: sizes[0], color: colors[0] };
+
+  const pickOffer = () => {
+    let found = offers.find(o => {
+      const pr = offerProps(o);
+      return (sizes.length ? pr.size === selected.size : true) &&
+             (colors.length ? pr.color === selected.color : true);
+    });
+    return found || offers[0] || {};
+  };
+  let current = pickOffer();
 
   const card = document.createElement('div');
   card.className = 'card';
@@ -135,29 +172,73 @@ function productCard(p) {
 
   const price = document.createElement('div');
   price.className = 'price';
-  price.textContent = `${offer.price ?? '-'} ₽`;
+  price.textContent = current?.price ? `${current.price} ₽` : (p.minPrice ? `${p.minPrice} ₽` : '—');
   body.appendChild(price);
 
+  // селекты вариантов
+  const vRow = document.createElement('div');
+  vRow.className = 'variant-row';
+
+  if (sizes.length) {
+    const sizeSel = document.createElement('select');
+    sizes.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s || '';
+      opt.textContent = s ? `Размер: ${s}` : 'Размер: —';
+      sizeSel.appendChild(opt);
+    });
+    sizeSel.onchange = () => { selected.size = sizeSel.value; current = pickOffer(); price.textContent = current?.price ? `${current.price} ₽` : '—'; };
+    vRow.appendChild(sizeSel);
+  }
+
+  if (colors.length) {
+    const colorSel = document.createElement('select');
+    colors.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c || '';
+      opt.textContent = c ? `Цвет: ${c}` : 'Цвет: —';
+      colorSel.appendChild(opt);
+    });
+    colorSel.onchange = () => { selected.color = colorSel.value; current = pickOffer(); price.textContent = current?.price ? `${current.price} ₽` : '—'; };
+    vRow.appendChild(colorSel);
+  }
+
+  if (sizes.length + colors.length) body.appendChild(vRow);
+
+  // количество
   const qtySel = document.createElement('select');
-  for (let q=1;q<=5;q++){ 
-    const opt=document.createElement('option');
-    opt.value=q; opt.textContent=`Кол-во: ${q}`;
+  for (let q = 1; q <= 5; q++) {
+    const opt = document.createElement('option');
+    opt.value = q; opt.textContent = `Кол-во: ${q}`;
     qtySel.appendChild(opt);
   }
   body.appendChild(qtySel);
 
+  // кнопка "в корзину"
   const addBtn = document.createElement('button');
   addBtn.textContent = 'В корзину';
   addBtn.onclick = () => {
-    state.items.push({ offerExternalId, qty: parseInt(qtySel.value,10) });
+    const offer = pickOffer();
+    const offerExternalId = offer.externalId || offer.xmlId || (p.id + ':' + (selected.size||'') + ':' + (selected.color||''));
+    state.items.push({
+      productName: p.name,
+      size: selected.size,
+      color: selected.color,
+      offerExternalId,
+      price: offer.price || p.minPrice || 0,
+      qty: parseInt(qtySel.value, 10),
+      image: imgUrl
+    });
     updateCartBadge();
-    if (tg) tg.HapticFeedback?.notificationOccurred('success');
+    renderCart(); // открываем экран корзины
+    tg?.HapticFeedback?.notificationOccurred('success');
   };
   body.appendChild(addBtn);
 
   card.appendChild(body);
   return card;
 }
+
 
 async function loadCatalog(q='') {
   const url = new URL(API('/catalog'));
