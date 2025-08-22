@@ -2,21 +2,26 @@
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <title>Alexandra Talalay — каталог</title>
+    <title>Alexandra Talalay — магазин в Telegram</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header>
+    <!-- Home / Обложка -->
+    <section id="home"></section>
+
+    <!-- Каталог -->
+    <header id="header" class="hidden">
+      <button id="backBtn" class="back hidden">←</button>
       <h1>Каталог</h1>
       <input id="search" placeholder="Поиск..." />
     </header>
 
-    <main id="list"></main>
+    <div id="chips" class="chips hidden"></div>
+    <main id="list" class="hidden"></main>
 
-    <footer>
+    <footer id="footer" class="hidden">
       <button id="cartBtn">Корзина (0)</button>
       <button id="payBtn">Оплатить</button>
     </footer>
