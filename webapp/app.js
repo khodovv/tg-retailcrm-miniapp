@@ -5,7 +5,7 @@ try { tg?.ready(); tg?.expand(); } catch(e){}
 // === БРЕНД-КОНСТАНТЫ (можешь поменять) ===
 const BRAND_TITLE = "Alexandra Talalay";
 const BRAND_SUBTITLE = "Минимализм с нотками old money";
-const HERO_IMAGE_URL = "https://alexandratalalay.com/local/templates/.default/img/social_share.jpg"; // поставь красивый баннер
+const HERO_IMAGE_URL = "webapp/Готовые а8.jpg"; // поставь красивый баннер
 const PROMO_CHIPS = [
   { label: "Новинки", q: "" },
   { label: "Платья", q: "плать" },
