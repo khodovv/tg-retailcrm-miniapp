@@ -1,0 +1,2100 @@
+{
+  "name": "финансовый бот 4 вариант с накоплениями",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "2707e1b7-5a59-47e0-9bf5-a24868021e3f",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.Message_ID }}",
+              "rightValue": "="
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "a706d7a1-3e67-4acb-96b2-5a7999df7b0d",
+      "name": "IF (Is Duplicate?)",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -80,
+        1472
+      ],
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "loose"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "8505ca3e-24b9-4ce6-b803-3f844f5e07f5",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{$node[\"Telegram Trigger\"].json.message.voice}}",
+                    "rightValue": "true"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "loose"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "dfefc516-d1e3-4932-a4b4-d2f3dd2c84ae",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{$node[\"Telegram Trigger\"].json.message.photo}}",
+                    "rightValue": "true"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Photo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 3,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "loose"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "3e137d35-f896-4ecf-bc4e-a481240c7acd",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{$node[\"Telegram Trigger\"].json.message.text}}",
+                    "rightValue": "true"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "58d3a9b9-d60a-423c-8877-adb308cc3f97",
+      "name": "Switch (Voice/Photo/Text)",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        448,
+        1504
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: $node[\"Telegram Trigger\"].json }];"
+      },
+      "id": "76ad48aa-037f-42d8-a939-90da0f0f2858",
+      "name": "Code (Restore Telegram Payload)",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        192,
+        1520
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d5fe1c74-66db-4a76-ae1e-f8c8043f8309",
+              "name": "raw_input",
+              "type": "string",
+              "value": "={{$json.message.text}}"
+            },
+            {
+              "id": "45bc27fc-b351-4429-a7cb-45c6138a7f7c",
+              "name": "message_id",
+              "type": "string",
+              "value": "={{$json.message.message_id}}"
+            },
+            {
+              "id": "06f119fc-1fb7-4033-a1f3-68f292f294e4",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{$json.message.chat.id}}"
+            },
+            {
+              "id": "98509cc8-b1b5-4384-899e-19d7a2ffe14d",
+              "name": "source_type",
+              "type": "string",
+              "value": "text"
+            },
+            {
+              "id": "c25b1e8b-91e8-45ab-b0c5-189c8184223f",
+              "name": "now",
+              "type": "string",
+              "value": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-LL-dd HH:mm:ss') }}"
+            },
+            {
+              "id": "ba343e09-509b-4031-958f-b41ab59505fc",
+              "name": "update_id",
+              "type": "string",
+              "value": "={{ $json.update_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "18321ed0-640c-4bfb-aa80-2a6d1af671cd",
+      "name": "Set (Text Context)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        688,
+        1728
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $json;\n\n// ---------- helpers ----------\n\n// ISO -> \"YYYY-MM-DD HH:mm\"\nfunction fromIso(str) {\n  if (typeof str !== 'string') return null;\n  const m = str.trim().match(/^(\\d{4}-\\d{2}-\\d{2})T(\\d{2}:\\d{2})/);\n  return m ? `${m[1]} ${m[2]}` : null;\n}\n\n// RU date inside text: \"DD.MM.YYYY HH:mm\"\nfunction extractRuFromText(str) {\n  if (typeof str !== 'string') return null;\n  const m = str.match(/(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})\\s+(\\d{1,2}):(\\d{2})/);\n  if (!m) return null;\n\n  const dd = String(m[1]).padStart(2, '0');\n  const mm = String(m[2]).padStart(2, '0');\n  const yyyy = m[3];\n  const hh = String(m[4]).padStart(2, '0');\n  const mi = m[5];\n\n  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;\n}\n\n// Unix seconds -> \"YYYY-MM-DD HH:mm\" (Moscow)\nfunction fromTelegramUnixToMoscow(unixSeconds) {\n  if (!unixSeconds) return null;\n  const ms = Number(unixSeconds) * 1000;\n  if (!Number.isFinite(ms)) return null;\n\n  const d = new Date(ms);\n\n  const parts = new Intl.DateTimeFormat('ru-RU', {\n    timeZone: 'Europe/Moscow',\n    year: 'numeric',\n    month: '2-digit',\n    day: '2-digit',\n    hour: '2-digit',\n    minute: '2-digit',\n    hour12: false,\n  }).formatToParts(d);\n\n  const get = (t) => parts.find(p => p.type === t)?.value;\n  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`;\n}\n\nfunction safeNodeJson(nodeName) {\n  try {\n    return $node?.[nodeName]?.json ?? null;\n  } catch (e) {\n    return null;\n  }\n}\n\nfunction normalizeCategory(cat) {\n  const s = (cat ?? '').toString().trim();\n  return s ? s : 'Другое';\n}\n\nfunction toNumber(x) {\n  if (x === null || x === undefined) return null;\n  if (typeof x === 'number') return Number.isFinite(x) ? x : null;\n  const s = String(x).replace(/\\s/g, '').replace(',', '.');\n  const n = Number(s);\n  return Number.isFinite(n) ? n : null;\n}\n\n// ---------- date resolve ----------\nconst telegramCtx = safeNodeJson(\"Telegram Trigger\");\nconst telegramUnix = telegramCtx?.message?.date ?? telegramCtx?.date ?? null;\n\nfunction resolveDate() {\n  const fromText =\n    extractRuFromText(base.raw_message) ||\n    extractRuFromText(base.raw_input);\n\n  if (fromText) return fromText;\n\n  const iso =\n    fromIso(base.created_at) ||\n    fromIso(base.now);\n\n  if (iso) return iso;\n\n  const tg = fromTelegramUnixToMoscow(telegramUnix);\n  if (tg) return tg;\n\n  return fromTelegramUnixToMoscow(Math.floor(Date.now() / 1000));\n}\n\n// ---------- context ----------\nconst ctx = {\n  date: resolveDate(),\n  raw_input: base.raw_input ?? null,\n  raw_message: base.raw_message ?? base.raw_input ?? null,\n  update_id: base.update_id ?? null,\n  message_id: base.message_id ?? null,\n  chat_id: base.chat_id ?? null,\n  source_type: base.source_type ?? null,\n};\n\n// ---------- build expenses ----------\nlet expenses = [];\n\nif (Array.isArray(base.expenses) && base.expenses.length) {\n  expenses = base.expenses;\n} else if (base.type === 'expense' && (base.amount != null || base.item || base.comment)) {\n  expenses = [{\n    item: base.item ?? base.comment ?? null,\n    amount: base.amount ?? null,\n    category: base.category ?? null,\n    currency: base.currency ?? 'RUB',\n    payment_method: base.payment_method ?? null,\n    comment: base.comment ?? null,\n  }];\n}\n\n// ✅ Fallback: если это накопление, но расходов нет — создаём 1 item вручную\nif ((!expenses || expenses.length === 0) && base.is_savings === true) {\n  const amt =\n    toNumber(base.amount) ??\n    toNumber(base.savings_amount_hint);\n\n  expenses = [{\n    item: (base.savings_account ?? 'Общий'),\n    amount: amt,\n    category: 'Накопления',\n    currency: base.currency ?? 'RUB',\n    payment_method: base.payment_method ?? null,\n    comment: ctx.raw_message ?? null,\n  }];\n}\n\n// ---------- output items (1 item per expense) ----------\nreturn expenses.map(e => ({\n  json: {\n    date: ctx.date,\n\n    item: e.item ?? e.comment ?? null,\n    amount: e.amount ?? null,\n    category: (base.is_savings === true ? 'Накопления' : normalizeCategory(e.category)),\n    currency: e.currency ?? 'RUB',\n    payment_method: e.payment_method ?? null,\n    comment: e.comment ?? null,\n\n    raw_input: ctx.raw_input,\n    raw_message: ctx.raw_message,\n    update_id: ctx.update_id,\n    message_id: ctx.message_id,\n    chat_id: ctx.chat_id,\n    source_type: ctx.source_type,\n\n    // ✅ ключевые поля для ветвления/записи в Savings\n    is_savings: base.is_savings === true,\n    savings_account: base.savings_account ?? 'Общий',\n  }\n}));\n"
+      },
+      "id": "d7311a96-bf58-430a-af1e-26d5280a3e87",
+      "name": "Code (Split expenses to items)",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2752,
+        1376
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "8d8e2ec2-b28e-47f8-8066-69c3f036fa21",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.is_savings === true || (Array.isArray($json.expenses) && $json.expenses.length > 0) || $json.type === 'expense' }}",
+              "rightValue": 0
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "46700179-198e-4e8c-bf5c-4e495b76f789",
+      "name": "IF (Has expenses?)",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        2528,
+        1376
+      ],
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=⚠️ Could not understand expenses in: \"{{$json.raw_input}}\"\nPlease try format: \"Lunch 10k\" or \"Taxi 50k\".",
+        "additionalFields": {
+          "reply_to_message_id": "={{ $json.message_id }}"
+        }
+      },
+      "id": "d3abf592-f69c-4b95-8aca-6cd4cee049e9",
+      "name": "Telegram → Send Error Message and wait for response",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        2800,
+        1712
+      ],
+      "webhookId": "0095ce09-2eb5-4497-944a-42ed5e19b35b",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message.chat.id }}",
+        "text": "={{ $json.summary_text || \"Готово ✅\" }}",
+        "additionalFields": {
+          "reply_to_message_id": "={{ $node[\"Telegram Trigger\"].json.message.message_id }}"
+        }
+      },
+      "id": "8c42b6c8-1fd4-4ca6-b3b4-a797a504d0c8",
+      "name": "Telegram → Send Final Message",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        2800,
+        992
+      ],
+      "webhookId": "de45a922-5fb1-4dc7-a684-cd3e3cbfe09e",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c84c376e-40f2-4026-9875-9e36880714eb",
+              "name": "update_id",
+              "type": "string",
+              "value": "={{ $json.update_id }}"
+            },
+            {
+              "id": "55101232-245a-43e9-a903-bdf36cffb71d",
+              "name": "message_id",
+              "type": "string",
+              "value": "={{$json.message.message_id}}"
+            },
+            {
+              "id": "4f342238-d326-498c-9570-fd1f5a5fa40f",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{$json.message.chat.id}}"
+            },
+            {
+              "id": "72c7c3ab-cd23-49e7-b2e9-52d78317a8d2",
+              "name": "source_type",
+              "type": "string",
+              "value": "voice"
+            },
+            {
+              "id": "229a19c4-9e34-4f76-b1e6-0ba16b0fbc45",
+              "name": "file_id",
+              "type": "string",
+              "value": "={{$json.message.voice.file_id}}"
+            },
+            {
+              "id": "e953e5e2-356a-434c-923a-d157c7f8dea8",
+              "name": "raw_input",
+              "type": "string",
+              "value": "[voice]"
+            },
+            {
+              "id": "15a7e226-39c0-42d3-8e08-d904eb8c6758",
+              "name": "now",
+              "type": "string",
+              "value": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-LL-dd HH:mm:ss') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e72a971e-8879-4e5e-8b67-c43ec33bf934",
+      "name": "Set (Voice Context)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        720,
+        1088
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{$json.file_id}}",
+        "additionalFields": {
+          "mimeType": "audio/ogg"
+        }
+      },
+      "id": "849047ff-d0c7-4c47-8a53-1e07ebeed5ad",
+      "name": "Telegram → Get Voice File",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        912,
+        1088
+      ],
+      "webhookId": "10d24e7b-b7ae-48b8-bcb3-659a84f87967",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ \n  $json.message?.photo?.length \n    ? $json.message.photo[$json.message.photo.length - 1].file_id \n    : $json.message?.document?.file_id \n}}",
+        "additionalFields": {
+          "mimeType": "image/jpeg"
+        }
+      },
+      "id": "ceedcd02-fb93-4f7f-b53b-dbdf84882dd1",
+      "name": "Telegram → Get Image File",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        896,
+        1472
+      ],
+      "webhookId": "0f92a088-01eb-4883-88f2-8a4e7b2a4a9c",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c48f3c1f-65ec-4d06-9464-7bc8efa70bdf",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ /попол|бюджет|внес|добав/i.test(($json.message?.text ?? '').toLowerCase()) }}",
+                    "rightValue": true
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "AddBudget"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "860f8961-59be-4747-85cd-3193ee811ca0",
+                    "leftValue": "={{ true }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Default"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "bd367508-39e8-4d05-8ffa-2f5c89a6b512",
+      "name": "Switch (Command Router)",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        -288,
+        1248
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "// Берём исходный апдейт Telegram и НЕ теряем chat_id/message_id\nconst msg = $json.message ?? {};\nconst text = String(msg.text ?? $json.raw_text ?? \"\").trim();\n\nconst chat_id =\n  msg.chat?.id ??\n  $json.chat_id ??\n  null;\n\nconst message_id =\n  msg.message_id ??\n  $json.message_id ??\n  null;\n\nconst update_id = $json.update_id ?? $json.updateId ?? null;\n\n// Парсим сумму: \"Пополнил 20000\", \"пополнение 10к\", \"add_budget 1m\"\nlet amount = null;\n\nconst m = text.match(/(?:^|[\\s/])(?:add_budget|add\\s+budget|пополнил|пополнить|пополнение|внес|внёс|добавил(?:\\s+в\\s+бюджет)?|бюджет)\\s*([0-9]+(?:[.,][0-9]+)?)\\s*(k|к|m|м)?/i);\n\nif (m) {\n  const num = parseFloat(m[1].replace(\",\", \".\"));\n  const suf = (m[2] ?? \"\").toLowerCase();\n\n  if (!Number.isNaN(num)) {\n    if (suf === \"k\" || suf === \"к\") amount = Math.round(num * 1000);\n    else if (suf === \"m\" || suf === \"м\") amount = Math.round(num * 1000000);\n    else amount = Math.round(num);\n  }\n}\n\nconst ok = typeof amount === \"number\" && amount > 0;\n\n// timestamp (можешь потом заменить на свой \"now\")\nconst ts = new Date().toISOString().replace(\"T\", \" \").slice(0, 19);\n\nreturn [\n  {\n    json: {\n      ok,\n      ts,\n      amount,\n      raw_text: text,\n      chat_id,\n      message_id,\n      update_id,\n      error_text: ok ? null : 'Invalid format. Usage: \"Пополнил 20000\" или \"/add_budget 20k\".'\n    }\n  }\n];"
+      },
+      "id": "c75cc5d6-f340-46bc-bc7a-e5c4120d4250",
+      "name": "Code (Parse Budget Amount)",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        48,
+        592
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "4c555183-5715-4b0b-91ab-b2f14498a9e5",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "44be47d3-9f9e-48ff-a3e2-c9552008ae1a",
+      "name": "IF (Budget ok?)",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        240,
+        592
+      ],
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.error_text }}",
+        "additionalFields": {
+          "reply_to_message_id": "={{ $json.message_id }}"
+        }
+      },
+      "id": "162d1c54-4b99-4e69-a579-24982fd576ba",
+      "name": "Telegram → Budget Error",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        480,
+        816
+      ],
+      "webhookId": "22cdef11-eafc-4600-939d-55d9bf51cd70",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('CONFIG - User Settings').item.json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ Number($('CONFIG - User Settings').item.json.sheet_gid_budget) }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $json.ts }}",
+            "amount": "={{ $json.amount }}",
+            "raw_text": "={{ $json.raw_text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "ts",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amount",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "amount",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "raw_text",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "raw_text",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "424564a4-955a-43ca-8611-2f8504bd2fb4",
+      "name": "Google Sheets → Append or update row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        448,
+        560
+      ],
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('IF (Budget ok?)').item.json.chat_id }}",
+        "text": "=✅ Budget updated to: {{$json.formatted_amount}}",
+        "additionalFields": {
+          "reply_to_message_id": "={{ $('IF (Budget ok?)').item.json.message_id }}"
+        }
+      },
+      "id": "281de625-459a-41a3-8764-32326e8df68f",
+      "name": "Telegram → Budget Updated",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        656,
+        576
+      ],
+      "webhookId": "f665877c-70e4-4334-8fed-d575b5ff4047",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "b227b60b-800c-4eb4-a819-17f2dbfae5ac",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "position": [
+        -1744,
+        1200
+      ],
+      "webhookId": "a9e03c1c-40f8-4309-96bb-d563eaa9d325",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2696366a-a0ac-4911-8f0b-3c1e4cb4efab",
+              "name": "spreadsheet_id",
+              "type": "string",
+              "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8"
+            },
+            {
+              "id": "393db088-bfe0-493e-9fdb-61eb49d62fd1",
+              "name": "sheet_gid_log",
+              "type": "string",
+              "value": "2124995326"
+            },
+            {
+              "id": "719092f5-e6b7-416c-9b73-4b7346bdf6df",
+              "name": "sheet_gid_dashboard",
+              "type": "string",
+              "value": "116456903"
+            },
+            {
+              "id": "56c12832-6f97-47b0-93de-986dcaa1357f",
+              "name": "sheet_gid_budget",
+              "type": "string",
+              "value": "1778310904"
+            },
+            {
+              "id": "4de77bb6-8952-4df1-a34d-16b4c9393b8a",
+              "name": "currency_code",
+              "type": "string",
+              "value": "RUB"
+            },
+            {
+              "id": "13626830-f7c6-44b3-bd31-3b0ac81b56e3",
+              "name": "currency_symbol",
+              "type": "string",
+              "value": "₽"
+            },
+            {
+              "id": "8a3aba9b-1e2d-4608-89c0-4713c594e657",
+              "name": "locale",
+              "type": "string",
+              "value": "ru-RU"
+            },
+            {
+              "id": "39a94c66-e67f-4e3a-8f01-2a5e76040ebe",
+              "name": "timezone",
+              "type": "string",
+              "value": "Europe/Moscow"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "10603b28-098b-4ef2-abec-5ea40bae0e65",
+      "name": "CONFIG - User Settings",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -496,
+        1248
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Ты — парсер расходов для финансового бота в Telegram (RU). Твоя задача: из одного сообщения пользователя извлечь расходы и вернуть СТРОГО валидный JSON (без\nи без пояснений).\n\nВход: одна строка с текстом (например: \"кофе 200\", \"такси 500\", \"кофе 200 и вода 60\").\nВыход JSON строго такого вида:\n\n{\n  \"type\": \"expense\",\n  \"expenses\": [\n    {\n      \"item\": \"string\",\n      \"amount\": number,\n      \"currency\": \"RUB\",\n      \"category\": \"string|null\",\n      \"payment_method\": \"cash|card|null\",\n      \"date\": \"YYYY-MM-DD HH:mm:ss|null\",\n      \"comment\": \"string|null\"\n    }\n  ],\n  \"summary_text\": \"string\"\n}\n\nПравила:\n1) Почти любое сообщение вида \"<название> <число>\" — это РАСХОД. Например: \"кофе 200\" = expense.\n2) \"type\" ВСЕГДА \"expense\", если удалось извлечь хотя бы один расход.\n3) \"type\" = \"unknown\" ТОЛЬКО если вообще невозможно выделить ни одного расхода (нет суммы).\n4) \"type\" = \"command\" возвращай ТОЛЬКО если сообщение НАЧИНАЕТСЯ с \"/\" (например \"/balance\", \"/report\")\n   или это точные команды: \"баланс\", \"остаток\", \"отчет\", \"отчёт\" (без суммы).\n   Если есть сумма — это НЕ команда, это расход.\n5) Валюта по умолчанию RUB.\n6) payment_method:\n   - \"card\" если в тексте есть \"карта\", \"по карте\", \"card\"\n   - \"cash\" если есть \"нал\", \"налич\", \"cash\"\n   - иначе null\n7) category:\n   - \"кофе\" / \"coffee\" -> \"Кафе\"\n   - \"такси\" -> \"Транспорт\"\n   - \"продукты\" -> \"Продукты\"\n   - если не уверен -> null\n8) date всегда null (дату проставит workflow).\n9) summary_text: коротко подтверждай: \"Записал: кофе — 200 RUB\" или для нескольких \"Записал 2 расхода: ...\"\n\nПримеры:\nВход: \"кофе 200\"\nВыход: {\"type\":\"expense\",\"expenses\":[{\"item\":\"кофе\",\"amount\":200,\"currency\":\"RUB\",\"category\":\"Кафе\",\"payment_method\":null,\"date\":null,\"comment\":null}],\"summary_text\":\"Записал: кофе — 200 RUB\"}\n\nВход: \"баланс\"\nВыход: {\"type\":\"command\",\"expenses\":[],\"summary_text\":\"balance\"}\n\nВход: \"кофе 200 карта\"\nВыход: {\"type\":\"expense\",\"expenses\":[{\"item\":\"кофе\",\"amount\":200,\"currency\":\"RUB\",\"category\":\"Кафе\",\"payment_method\":\"card\",\"date\":null,\"comment\":null}],\"summary_text\":\"Записал: кофе — 200 RUB (карта)\"}\n\nВерни только JSON. "
+            },
+            {
+              "content": "={{$node[\"Set (Text Context)\"].json.raw_input}}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1088,
+        1888
+      ],
+      "id": "d543309c-9c0a-46b4-8e7d-2043e33f9133",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "lw5HlZcMyYYEjBqU",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Normalize OpenAI output without breaking workflow context ---\n// Output contract:\n// - openai_text: string (ALWAYS valid JSON string)\n// - _openai_raw_text: raw model text\n// - _openai_mode: 'json_ok' | 'fallback_wrapped' | 'fallback_empty'\n\nfunction getOpenAiText(j) {\n  if (typeof j?.openai_text === 'string' && j.openai_text.trim()) return j.openai_text;\n\n  // Responses API style\n  const t1 =\n    j?.output?.[0]?.content?.find?.(c => c?.type === 'output_text')?.text ??\n    j?.output?.[0]?.content?.[0]?.text ??\n    j?.output?.[0]?.content?.[0]?.text?.value;\n  if (typeof t1 === 'string' && t1.trim()) return t1;\n\n  // Chat Completions style\n  const t2 = j?.choices?.[0]?.message?.content;\n  if (typeof t2 === 'string' && t2.trim()) return t2;\n\n  // Other wrappers\n  const t3 = j?.output_text ?? j?.text ?? j?.content ?? j?.data?.[0]?.content?.[0]?.text;\n  if (typeof t3 === 'string' && t3.trim()) return t3;\n\n  return '';\n}\n\nfunction extractJsonText(raw) {\n  if (!raw || typeof raw !== 'string') return null;\n\n  const cleaned = raw\n    .replace(/```json/gi, '```')\n    .trim();\n\n  // ``` ... ```\n  const fenced = cleaned.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/i);\n  if (fenced?.[1]) return fenced[1].trim();\n\n  // first {...}\n  const obj = cleaned.match(/\\{[\\s\\S]*\\}/);\n  if (obj?.[0]) return obj[0].trim();\n\n  // maybe it's already json\n  try {\n    JSON.parse(cleaned);\n    return cleaned;\n  } catch (e) {}\n\n  return null;\n}\n\nconst raw = getOpenAiText($json).trim();\n\nif (!raw) {\n  const fallback = JSON.stringify({\n    expenses: [],\n    summary_text: \"Пустой ответ модели. Повторите, пожалуйста, сообщение.\",\n  });\n\n  return [{\n    json: {\n      ...$json,\n      openai_text: fallback,\n      _openai_raw_text: '',\n      _openai_mode: 'fallback_empty',\n    }\n  }];\n}\n\nconst jsonText = extractJsonText(raw);\n\nif (jsonText) {\n  // validate JSON is parseable\n  try {\n    JSON.parse(jsonText);\n  } catch (e) {\n    // if we extracted something that isn't valid json, fall back\n    const fallback = JSON.stringify({\n      expenses: [],\n      summary_text: \"Не удалось распарсить JSON из ответа модели. Сформулируйте расход так: «Категория сумма комментарий» (пример: «Кофе 400»).\",\n      model_reply: raw,\n    });\n\n    return [{\n      json: {\n        ...$json,\n        openai_text: fallback,\n        _openai_raw_text: raw,\n        _openai_mode: 'fallback_wrapped',\n      }\n    }];\n  }\n\n  // ✅ success: keep original $json, but add normalized fields\n  return [{\n    json: {\n      ...$json,\n      openai_text: jsonText,\n      _openai_raw_text: raw,\n      _openai_mode: 'json_ok',\n    }\n  }];\n}\n\n// Non-JSON answer: wrap into fallback JSON (do NOT crash)\nconst fallback = JSON.stringify({\n  expenses: [],\n  summary_text: \"Ответ модели был текстом. Сформулируйте расход так: «Категория сумма комментарий» (пример: «Кофе 400» или «Такси 650 аэропорт»).\",\n  model_reply: raw,\n});\n\nreturn [{\n  json: {\n    ...$json,\n    openai_text: fallback,\n    _openai_raw_text: raw,\n    _openai_mode: 'fallback_wrapped',\n  }\n}];\n"
+      },
+      "id": "0321064d-3455-4c82-9292-6eb70654e5c3",
+      "name": "Code (Normalize OpenAi Text Output)",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1504,
+        1808
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "function extractJsonObject(text) {\n  if (!text || typeof text !== 'string') return null;\n\n  const cleaned = text\n    .replace(/```json/gi, '```')\n    .replace(/```/g, '')\n    .trim();\n\n  try {\n    return { obj: JSON.parse(cleaned), cleaned };\n  } catch (e) {}\n\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n  if (!match) return null;\n\n  try {\n    return { obj: JSON.parse(match[0]), cleaned: match[0] };\n  } catch (e) {\n    return null;\n  }\n}\n\nfunction getOpenAiText(j) {\n  if (typeof j?.openai_text === 'string' && j.openai_text.trim()) return j.openai_text;\n\n  const t1 =\n    j?.output?.[0]?.content?.find?.(c => c?.type === 'output_text')?.text ??\n    j?.output?.[0]?.content?.[0]?.text ??\n    j?.output?.[0]?.content?.[0]?.text?.value;\n  if (typeof t1 === 'string' && t1.trim()) return t1;\n\n  const t2 = j?.choices?.[0]?.message?.content;\n  if (typeof t2 === 'string' && t2.trim()) return t2;\n\n  const t3 = j?.output_text ?? j?.text ?? j?.content;\n  if (typeof t3 === 'string' && t3.trim()) return t3;\n\n  return '';\n}\n\nfunction safeNodeJson(nodeName) {\n  try {\n    const n = $node?.[nodeName];\n    return n?.json ?? null;\n  } catch (e) {\n    return null;\n  }\n}\n\nconst setTextCtx = safeNodeJson(\"Set (Text Context)\");\nconst telegramCtx = safeNodeJson(\"Telegram Trigger\");\nconst itemCtx = ($json && typeof $json === 'object') ? $json : {};\n\nconst base = setTextCtx ?? itemCtx ?? telegramCtx ?? {};\n\nconst aiText = getOpenAiText($json);\nconst parsed = extractJsonObject(aiText);\n\nif (!parsed) {\n  throw new Error(`OpenAI output is not valid JSON. Raw:\\n${aiText}`);\n}\n\nconst data = parsed.obj;\n\nif (data && typeof data === 'object') {\n  if (!Array.isArray(data.expenses)) data.expenses = [];\n  if (typeof data.summary_text !== 'string') data.summary_text = '';\n}\n\n// ЕДИНЫЙ ctx: сюда добавили created_at + raw_message\nconst ctx = {\n  update_id: base.update_id ?? telegramCtx?.update_id ?? null,\n\n  raw_input:\n    base.raw_input ??\n    itemCtx.raw_input ??\n    telegramCtx?.raw_input ??\n    telegramCtx?.message?.text ??\n    null,\n\n  message_id:\n    base.message_id ??\n    itemCtx.message_id ??\n    telegramCtx?.message_id ??\n    telegramCtx?.message?.message_id ??\n    null,\n\n  chat_id:\n    base.chat_id ??\n    itemCtx.chat_id ??\n    telegramCtx?.chat_id ??\n    telegramCtx?.message?.chat?.id ??\n    telegramCtx?.chat?.id ??\n    null,\n\n  source_type:\n    base.source_type ??\n    itemCtx.source_type ??\n    null,\n\n  now:\n    base.now ??\n    itemCtx.now ??\n    base[\"now \"] ??\n    itemCtx[\"now \"] ??\n    $now,\n\n  // ✅ добавили\n  created_at:\n    base.now ??\n    itemCtx.now ??\n    base[\"now \"] ??\n    itemCtx[\"now \"] ??\n    $now,\n\n  raw_message:\n    base.raw_input ??\n    itemCtx.raw_input ??\n    telegramCtx?.raw_input ??\n    telegramCtx?.message?.text ??\n    null,\n};\n\nreturn [{\n  json: {\n    ...data,\n    _ai_raw_text: aiText,\n    _ai_clean_json_text: parsed.cleaned,\n    ...ctx,\n  }\n}];\n"
+      },
+      "id": "5d82b226-9def-41a1-aa6d-c74a681c3065",
+      "name": "Code (Parse openAI JSON)",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2000,
+        1376
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2124995326,
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=2124995326"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "Item": "={{ $json.item }}",
+            "Amount": "={{ $json.amount }}",
+            "Category": "={{ $json.category }}",
+            "Payment_Method": "={{ $json.payment_method }}",
+            "Currency": "={{$json.currency}}",
+            "Raw_Input": "={{ $json.raw_input }}",
+            "Update_ID": "={{ $json.update_id }}",
+            "Message_ID": "={{ $json.message_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Item",
+              "displayName": "Item",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment_Method",
+              "displayName": "Payment_Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Raw_Input",
+              "displayName": "Raw_Input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Update_ID",
+              "displayName": "Update_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message_ID",
+              "displayName": "Message_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3296,
+        1552
+      ],
+      "id": "53466627-a440-4cdd-abba-4fce238a5027",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "language": "=ru",
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1104,
+        1088
+      ],
+      "id": "dfed9345-6dca-4775-86b5-2fe0c7a60c07",
+      "name": "Transcribe a recording1",
+      "credentials": {
+        "openAiApi": {
+          "id": "lw5HlZcMyYYEjBqU",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const j = $json;\n\nconst transcript =\n  j.text ??\n  j.transcript ??\n  j.data?.text ??\n  j.output?.text ??\n  j.output_text ??\n  j.output?.[0]?.text ??\n  j.output?.[0]?.content?.[0]?.text ??\n  j.output?.[0]?.content?.[0]?.transcript ??\n  null;\n\nreturn [{\n  json: {\n    ...j,\n    raw_input: transcript ? String(transcript).trim() : null,\n    source_type: 'voice',\n  }\n}];\n"
+      },
+      "id": "6e9c0f0d-4837-4cbb-af01-8b2139cb6cc9",
+      "name": "Code (Normalize Audio Output)",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1280,
+        1088
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeNodeJson(nodeName) {\n  try {\n    return $node?.[nodeName]?.json ?? null;\n  } catch (e) {\n    return null;\n  }\n}\n\nfunction fromTelegramUnixToMoscow(unixSeconds) {\n  if (!unixSeconds) return null;\n  const ms = Number(unixSeconds) * 1000;\n  if (!Number.isFinite(ms)) return null;\n\n  const d = new Date(ms);\n\n  const parts = new Intl.DateTimeFormat('ru-RU', {\n    timeZone: 'Europe/Moscow',\n    year: 'numeric',\n    month: '2-digit',\n    day: '2-digit',\n    hour: '2-digit',\n    minute: '2-digit',\n    hour12: false,\n  }).formatToParts(d);\n\n  const get = (t) => parts.find(p => p.type === t)?.value;\n  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`;\n}\n\n// Telegram context (важно для даты и айдишников)\nconst telegramCtx = safeNodeJson(\"Telegram Trigger\");\nconst unix = telegramCtx?.message?.date ?? telegramCtx?.date ?? null;\n\n// ВХОД этого узла = результат OpenAI Vision (Message a model1)\n// Достаём текст ответа модели\nconst raw =\n  $json?.openai_text ??\n  $json?.output?.[0]?.content?.find?.(c => c?.type === 'output_text')?.text ??\n  $json?.output?.[0]?.content?.[0]?.text ??\n  $json?.choices?.[0]?.message?.content ??\n  $json?.output_text ??\n  $json?.text ??\n  '';\n\nreturn [{\n  json: {\n    ...$json,\n\n    // Унифицированные поля для общей логики дальше\n    source_type: 'photo',\n\n    // что модель вернула (как строка)\n    openai_text: raw,\n\n    // контекст телеги\n    update_id: telegramCtx?.update_id ?? $json?.update_id ?? null,\n    message_id: telegramCtx?.message?.message_id ?? $json?.message_id ?? null,\n    chat_id: telegramCtx?.message?.chat?.id ?? $json?.chat_id ?? null,\n\n    // created_at в одном формате, как у text/voice\n    created_at: fromTelegramUnixToMoscow(unix),\n\n    // исходный текст сообщения (если пользователь что-то писал вместе с фото)\n    raw_message: telegramCtx?.message?.caption ?? telegramCtx?.message?.text ?? $json?.raw_message ?? null,\n\n    // raw_input — то, что дальше будем логировать в таблицу\n    // для фото логично хранить caption либо краткое \"Photo\"\n    raw_input: telegramCtx?.message?.caption ?? 'Фото',\n  }\n}];\n"
+      },
+      "id": "83bdfafe-eb89-4a21-862a-f5a1fdebbcc4",
+      "name": "Code (Normalize Image Output)",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1472,
+        1552
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Ты OCR-парсер для финансового Telegram-бота.\nПрочитай текст с изображения (чек/фото/скрин).\nНайди расходы и верни их в формате JSON.\n\nВерни ТОЛЬКО валидный JSON.\nНикакого текста, никаких пояснений, никаких ```.\nЕсли на изображении чек магазина:\nНЕ возвращай список позиций.\n\nВозвращай только итоговую сумму чека.\n\nФормат строго JSON:\n\n{\n  \"type\": \"expense\",\n  \"item\": \"название магазина\",\n  \"amount\": 0,\n  \"currency\": \"RUB\",\n  \"category\": \"Продукты\",\n  \"date\": \"YYYY-MM-DD HH:MM\"\n}\n"
+            },
+            {
+              "type": "image",
+              "imageType": "base64"
+            },
+            {
+              "role": "system",
+              "content": "Блок “анти-угадайка”\n\nНе выдумывай магазин/категорию/суммы.\n\nЕсли поле не найдено в тексте чека — верни null.\n\nЗапрещено подставлять популярные магазины (“Магнит”, “Пятёрочка” и т.п.), если их нет в чеке.\n\nБлок “магазин”\n\nmerchant (название магазина) брать только из строк: “ООО…”, “ИП…”, “магазин…”, “торговая точка…”, заголовок чека.\n\nЕсли в чеке есть “ООО …” — это приоритетнее любых догадок.\n\nБлок “категория”\n\nЕсли в позициях встречаются слова из списка стройматериалов (краска/валик/шпатель/кисть/дюбель/саморез/герметик/пена/плитка/сверло/нож/перчатки/смесь/грунт) → category = “Стройматериалы”.\n\nЕсли нет уверенности → category = null."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1088,
+        1504
+      ],
+      "id": "c991d1a7-d310-4b6d-a002-3438acbd47d7",
+      "name": "Message a model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "lw5HlZcMyYYEjBqU",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "03df0e04-9fbe-49d6-8018-52f43f252b96",
+              "name": "update_id",
+              "type": "string",
+              "value": "={{$json.update_id}}"
+            },
+            {
+              "id": "12fc48a7-aacf-460a-95d5-93e3e4dd1b4c",
+              "name": "message_id",
+              "type": "string",
+              "value": "={{$json.message.message_id}}"
+            },
+            {
+              "id": "93ec3b26-05aa-45d6-99e6-52e12d3cdfbe",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{$json.message.chat.id}}"
+            },
+            {
+              "id": "9955eb19-7634-4cf9-8cf8-3a868aaacad2",
+              "name": "source_type",
+              "type": "string",
+              "value": "photo"
+            },
+            {
+              "id": "8a7b2fc9-350c-499e-a5aa-d28cc37701b7",
+              "name": "caption",
+              "type": "string",
+              "value": "={{$json.message.caption || \"[photo]\"}}"
+            },
+            {
+              "id": "5c70c114-304e-446f-8ced-30d935ea46f1",
+              "name": "raw_input",
+              "type": "string",
+              "value": "={{$json.message.caption || \"[photo]\"}}"
+            },
+            {
+              "id": "e7e5b2d3-cbe6-4dec-a0b2-3ee3e5906fcc",
+              "name": "now",
+              "type": "string",
+              "value": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-LL-dd HH:mm:ss') }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "44648fc8-92e3-451c-8074-8eba5ee6a060",
+      "name": "Set (Photo Context)",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        688,
+        1472
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "={{$json.raw_input}}"
+            },
+            {
+              "role": "system",
+              "content": "ВАЖНО: Верни ТОЛЬКО валидный JSON. Никакого текста, пояснений, Markdown, кавычек вокруг JSON.\n\nЕсли в сообщении есть товар/услуга и число — считай это расходом:\n- «кофе 400» => amount=400, category=\"Кофе\"\n- «такси 650 аэропорт» => amount=650, category=\"Такси\", comment=\"аэропорт\"\n\nЕсли есть несколько расходов — верни массив expenses.\n\nЕсли данных недостаточно — верни JSON с expenses:[] и summary_text с вопросом.\nФормат ответа СТРОГО такой:\n\n{\n  \"expenses\": [\n    {\n      \"amount\": 0,\n      \"currency\": \"RUB\",\n      \"category\": \"\",\n      \"comment\": \"\",\n      \"date\": \"YYYY-MM-DD\",\n      \"confidence\": 0.0\n    }\n  ],\n  \"summary_text\": \"\"\n}\n\nПравила:\n- currency всегда \"RUB\"\n- date = сегодняшняя дата\n- amount = число\n- confidence 0..1\n- Никаких других ключей.\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        1088
+      ],
+      "id": "266f1bc0-048c-4446-bad0-8533c66324d1",
+      "name": "Message a model (Expense Parser Voice)",
+      "credentials": {
+        "openAiApi": {
+          "id": "lw5HlZcMyYYEjBqU",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- Normalize OpenAI output into a predictable shape ---\n// Goal: always output { openai_text: \"<string>\" } and NEVER crash on non-JSON.\n// If OpenAI returned non-JSON, we wrap it into a fallback JSON with empty expenses.\n\nfunction getOpenAiText(j) {\n  if (typeof j?.openai_text === 'string' && j.openai_text.trim()) return j.openai_text;\n\n  // Responses API style (normal output_text)\n  const t1 =\n    j?.output?.[0]?.content?.find?.(c => c?.type === 'output_text')?.text ??\n    j?.output?.[0]?.content?.[0]?.text ??\n    j?.output?.[0]?.content?.[0]?.text?.value;\n  if (typeof t1 === 'string' && t1.trim()) return t1;\n\n  // ✅ NEW: some n8n/OpenAI nodes put assistant text into annotations.logprobs.text\n  const tLogprobs =\n    j?.output?.[0]?.content?.[0]?.annotations?.logprobs?.text ??\n    j?.output?.[0]?.content?.[0]?.annotations?.[0]?.logprobs?.text;\n  if (typeof tLogprobs === 'string' && tLogprobs.trim()) return tLogprobs;\n\n  // Chat Completions style\n  const t2 = j?.choices?.[0]?.message?.content;\n  if (typeof t2 === 'string' && t2.trim()) return t2;\n\n  // Other wrappers\n  const t3 = j?.output_text ?? j?.text ?? j?.content ?? j?.data?.[0]?.content?.[0]?.text;\n  if (typeof t3 === 'string' && t3.trim()) return t3;\n\n  return '';\n}\n\n// Extract JSON block from text (handles ```json ...``` and inline { ... })\nfunction extractJsonText(raw) {\n  if (!raw || typeof raw !== 'string') return null;\n\n  const cleaned = raw\n    .replace(/```json/gi, '```')\n    .replace(/```/g, '')\n    .trim();\n\n  // if whole string is JSON\n  try {\n    JSON.parse(cleaned);\n    return cleaned;\n  } catch (e) {}\n\n  // try first {...} block\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n  if (!match) return null;\n\n  try {\n    JSON.parse(match[0]);\n    return match[0];\n  } catch (e) {\n    return null;\n  }\n}\n\nconst raw = getOpenAiText($json).trim();\n\n// If OpenAI returned nothing, still return a safe JSON\nif (!raw) {\n  const fallback = JSON.stringify({\n    expenses: [],\n    summary_text: \"Я не смог распознать ответ модели. Повторите, пожалуйста, сообщение.\",\n  });\n\n  return [{\n    json: {\n      ...$json,\n      openai_text: fallback,\n      _openai_raw_text: '',\n      _openai_mode: 'fallback_empty',\n    }\n  }];\n}\n\nconst jsonText = extractJsonText(raw);\n\nif (jsonText) {\n  // Good case: we have JSON text\n  return [{\n    json: {\n      ...$json,\n      openai_text: jsonText,\n      _openai_raw_text: raw,\n      _openai_mode: 'json_ok',\n    }\n  }];\n}\n\n// Non-JSON case: wrap as a fallback JSON, so downstream Parse does not crash\nconst fallback = JSON.stringify({\n  expenses: [],\n  summary_text:\n    \"Не удалось получить JSON. Ответ модели был текстом. \" +\n    \"Сформулируйте расход так: «Категория сумма комментарий» (пример: «Кофе 400» или «Такси 650 аэропорт»).\",\n  model_reply: raw,\n});\n\nreturn [{\n  json: {\n    ...$json,\n    openai_text: fallback,\n    _openai_raw_text: raw,\n    _openai_mode: 'fallback_wrapped',\n  }\n}];\n"
+      },
+      "id": "db5ae37e-3d71-4f78-bccd-d5e1a78254d7",
+      "name": "Code (Normalize OpenAi Text Output)1",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1744,
+        1088
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtDayOfMonth": 30,
+              "triggerAtHour": 22
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        2144,
+        2176
+      ],
+      "id": "7bda7274-62fa-458c-ae12-6acbfdb4a819",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseMskDate(s) {\n  // ожидаем формат \"YYYY-MM-DD HH:mm\"\n  if (!s || typeof s !== 'string') return null;\n  const m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})[ T](\\d{2}):(\\d{2})/);\n  if (!m) return null;\n\n  const [_, Y, Mo, D, H, Mi] = m;\n  // трактуем как \"московское время\", переводим в UTC-миллисекунды\n  // (считаем, что МСК = UTC+3 без DST)\n  const dateUtc = Date.UTC(+Y, +Mo - 1, +D, +H - 3, +Mi);\n  return dateUtc;\n}\n\nfunction startOfDayMskUTC(now = new Date()) {\n  // 00:00 текущего дня по Москве, в UTC\n  const MSK_OFFSET_MS = 3 * 60 * 60 * 1000;\n  const msk = new Date(now.getTime() + MSK_OFFSET_MS);\n  const y = msk.getUTCFullYear();\n  const mo = msk.getUTCMonth();\n  const d = msk.getUTCDate();\n  // 00:00 МСК = 21:00 UTC предыдущего дня, но проще: создаём \"msk-as-utc\" и отнимаем offset\n  return Date.UTC(y, mo, d, 0, 0) - MSK_OFFSET_MS;\n}\n\nfunction endAt22MskUTC(now = new Date()) {\n  const MSK_OFFSET_MS = 3 * 60 * 60 * 1000;\n  const msk = new Date(now.getTime() + MSK_OFFSET_MS);\n  const y = msk.getUTCFullYear();\n  const mo = msk.getUTCMonth();\n  const d = msk.getUTCDate();\n  // 22:00 МСК в UTC\n  return Date.UTC(y, mo, d, 22, 0) - MSK_OFFSET_MS;\n}\n\nfunction toNumber(x) {\n  if (x === null || x === undefined) return null;\n  if (typeof x === 'number') return x;\n  const s = String(x).replace(/\\s/g, '').replace(',', '.');\n  const n = Number(s);\n  return Number.isFinite(n) ? n : null;\n}\n\nfunction normalizeCategory(cat) {\n  const c = (cat ?? '').toString().trim().toLowerCase();\n\n  // пусто/нет категории -> Другое\n  if (!c) return 'Другое';\n\n  if (c.includes('продукт')) return 'Продукты';\n\n  if (\n    c.includes('каф') ||\n    c.includes('рест') ||\n    c.includes('кино') ||\n    c.includes('аттрак') ||\n    c.includes('разв')\n  ) return 'Развлечения';\n\n  if (c.includes('еда') || c.includes('food') || c.includes('grocery')) return 'Продукты';\n  if (c.includes('restaurant') || c.includes('cafe') || c.includes('coffee') || c.includes('bar')) return 'Развлечения';\n\n  return 'Другое';\n}\n\nfunction fmt(n) {\n  return Math.round(n).toLocaleString('ru-RU');\n}\n\n// n8n items: каждая строка как item.json\nconst rows = items.map(i => i.json);\n\n// границы отчёта (UTC timestamps)\nconst start = startOfDayMskUTC(new Date());\nconst end = endAt22MskUTC(new Date());\n\nlet total = 0;\nconst sums = { 'Продукты': 0, 'Развлечения': 0, 'Другое': 0 };\nconst count = { 'Продукты': 0, 'Развлечения': 0, 'Другое': 0 };\n\nfor (const r of rows) {\n  const dt = parseMskDate(r.Date ?? r.date);\n  if (!dt) continue;\n\n  if (dt < start || dt >= end) continue;\n\n  const amount = toNumber(r.Amount ?? r.amount);\n  if (!amount) continue;\n\n  const cat = normalizeCategory(r.Category ?? r.category);\n\n  total += amount;\n  sums[cat] += amount;\n  count[cat] += 1;\n}\n\n// дата для шапки (по Москве)\nconst MSK_OFFSET_MS = 3 * 60 * 60 * 1000;\nconst mskNow = new Date(Date.now() + MSK_OFFSET_MS);\nconst yyyy = mskNow.getUTCFullYear();\nconst mm = String(mskNow.getUTCMonth() + 1).padStart(2, '0');\nconst dd = String(mskNow.getUTCDate()).padStart(2, '0');\n\nconst text =\n`Отчёт за ${yyyy}-${mm}-${dd} (00:00–22:00 МСК)\nИтого: ${fmt(total)} ₽\n\nПродукты: ${fmt(sums['Продукты'])} ₽ (${count['Продукты']})\nРазвлечения: ${fmt(sums['Развлечения'])} ₽ (${count['Развлечения']})\nДругое: ${fmt(sums['Другое'])} ₽ (${count['Другое']})\n`;\n\n// КУДА ОТПРАВЛЯЕМ (2 чата)\nconst chatIds = [\n  34676754,  // твой\n  55485136   // супруги\n];\n\nreturn chatIds.map(id => ({\n  json: {\n    chat_id: id,\n    report_text: text,\n    total,\n    sums,\n    count,\n    start_utc: start,\n    end_utc: end\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2624,
+        2176
+      ],
+      "id": "c44506f0-7554-4bae-9988-ab9ba48ef5d3",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2124995326,
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=2124995326"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2384,
+        2176
+      ],
+      "id": "ebf1ec80-98d2-422f-b377-bc7b3ba6cb6c",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.report_text}}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3008,
+        2176
+      ],
+      "id": "334b5545-703f-4d2a-86ff-3d19e566602e",
+      "name": "Send a text message",
+      "webhookId": "930f54be-61b2-4c66-b1d4-286448e4e9b5",
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Добавить:\n1. напоминание о постоянных платежах, коммуналка, кредиты, аренда (в отпределеное время бот сам напоминает что время оплатить не забудьте)\n2. записывать накопления в отдельную часть таблицы\n3. траты по кредтам шли в отдельный лист таьлицы и было видно сколько еще нужно оплатить\n\n\n",
+        "height": 304
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1136,
+        368
+      ],
+      "typeVersion": 1,
+      "id": "c4718cd6-86f0-4680-8879-42b66492a43f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node: Detect Savings (robust)\n// Goal:\n// - detect savings topups from text\n// - set: is_savings, savings_account, savings_amount_hint\n// - IMPORTANT: if is_savings and expenses[] is empty -> create a synthetic expense item\n//   so workflow doesn't fall into \"no expenses found\".\n\nfunction pickText(j) {\n  const candidates = [\n    j?.raw_message,\n    j?.raw_input,\n    j?.text,\n    j?.message,\n    j?.transcript,\n    j?.caption,\n  ];\n  for (const c of candidates) {\n    if (typeof c === 'string' && c.trim()) return c.trim();\n  }\n  return '';\n}\n\nfunction toNumber(x) {\n  if (x === null || x === undefined) return null;\n  if (typeof x === 'number') return Number.isFinite(x) ? x : null;\n  const s = String(x).replace(/\\s/g, '').replace(',', '.');\n  const n = Number(s);\n  return Number.isFinite(n) ? n : null;\n}\n\nfunction extractAmount(text) {\n  // Берём ПОСЛЕДНЕЕ число в строке (чаще всего это сумма)\n  // \"накопление отпуск 400\" -> 400\n  const matches = String(text || '').match(/(\\d[\\d\\s]*([.,]\\d{1,2})?)/g);\n  if (!matches || !matches.length) return null;\n  return toNumber(matches[matches.length - 1]);\n}\n\nfunction normalizeAccountName(accRaw) {\n  let a = String(accRaw || '').trim();\n\n  // убрать служебные слова\n  a = a\n    .replace(/\\b(на|в|во|счет|счёт|счета|счёта|счёте)\\b/gi, ' ')\n    .replace(/\\b(накопит(ельный)?|накопления?|сбережения?|сберег(ательный)?|копилка|вклад|депозит)\\b/gi, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  if (!a) return 'Общий';\n\n  // нормализуем \"общее/общие/общий\"\n  if (/^общ/i.test(a)) return 'Общий';\n\n  // Красивый вид\n  return a.charAt(0).toUpperCase() + a.slice(1);\n}\n\nfunction detectSavings(text) {\n  const t = (text || '').toLowerCase();\n\n  // ключевые слова накоплений\n  const isSavings =\n    t.includes('накоп') ||\n    t.includes('сбер') ||\n    t.includes('сберег') ||\n    t.includes('копилк') ||\n    t.includes('вклад') ||\n    t.includes('отлож') ||\n    t.includes('пополн') ||\n    t.includes('на счет') ||\n    t.includes('на счёт');\n\n  if (!isSavings) {\n    return { is_savings: false, savings_account: null };\n  }\n\n  // аккаунт по умолчанию\n  let account = 'Общий';\n\n  // быстрые правила для детей\n  if (t.includes('эми')) account = 'Эми';\n  if (t.includes('давид')) account = 'Давид';\n\n  // Более общий парсер: убираем стартовое слово \"накопление/сбережения/копилка/вклад...\"\n  // и берём всё ДО первого числа как \"счёт\"\n  const src = String(text || '').trim();\n\n  let rest = src\n    .replace(/^\\s*(накопление|накопления|сбережение|сбережения|копилка|вклад|депозит|пополнение)\\b\\s*[:\\-]?\\s*/i, '')\n    .trim();\n\n  // Если после ключевого слова сразу число — счёт не указан\n  if (/^\\d/.test(rest)) {\n    return { is_savings: true, savings_account: 'Общий' };\n  }\n\n  // вырезаем хвост с суммой (первое число и дальше)\n  const m = rest.match(/^(.+?)\\s+(\\d[\\d\\s]*([.,]\\d{1,2})?)\\s*$/);\n  if (m && m[1]) {\n    const candidate = normalizeAccountName(m[1]);\n    account = candidate || account;\n  } else {\n    // если суммы нет в конце — берём rest целиком\n    account = normalizeAccountName(rest);\n  }\n\n  return { is_savings: true, savings_account: account };\n}\n\n// ---- main ----\nconst text = pickText($json);\nconst detected = detectSavings(text);\nconst amountHint = extractAmount(text);\n\n// Собираем новый json\nconst out = {\n  ...$json,\n  is_savings: detected.is_savings,\n  savings_account: detected.savings_account,\n  savings_amount_hint: amountHint,\n};\n\n// КЛЮЧЕВОЕ: если это накопление и модель не дала expenses — создаём 1 запись сами\nif (out.is_savings) {\n  // гарантируем type/expenses для прохода IF(Has expenses?)\n  out.type = 'expense';\n\n  const hasExpenses = Array.isArray(out.expenses) && out.expenses.length > 0;\n\n  if (!hasExpenses) {\n    // создаём синтетический \"expense\", который дальше пойдёт в Split + в ветку savings\n    out.expenses = [\n      {\n        item: out.savings_account || 'Общий',\n        amount: amountHint,          // важно: сумма из текста/голоса\n        currency: 'RUB',\n        category: 'Накопления',\n        payment_method: null,\n        comment: text || out.raw_input || out.raw_message || null,\n      },\n    ];\n  }\n\n  // чтоб ответ пользователю был не \"no expenses found\"\n  out.summary_text = `Записал: накопления ${out.savings_account || 'Общий'} — ${amountHint ?? ''} RUB`.trim();\n}\n\nreturn [{ json: out }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        1392
+      ],
+      "id": "2e295e5f-538a-4897-928a-46368e68c106",
+      "name": "Code (Detect Savings)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "52f6eb9f-7c76-4238-951e-edd2fdc52c73",
+              "leftValue": "={{ $json.is_savings }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3024,
+        1296
+      ],
+      "id": "ed7389f9-25b9-49a6-acaa-0d87760bb1cd",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1618064710,
+          "mode": "list",
+          "cachedResultName": "Savings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=1618064710"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "Account": "={{$json.savings_account}}",
+            "Amount": "={{$json.amount}}",
+            "Currency": "={{ $json.currency }}",
+            "Comment": "={{$json.comment || $json.item}}",
+            "Raw_Input": "={{ $json.raw_input }}",
+            "chat_id": "={{$json.chat_id}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Account",
+              "displayName": "Account",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Comment",
+              "displayName": "Comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Raw_Input",
+              "displayName": "Raw_Input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3312,
+        1216
+      ],
+      "id": "c43218c6-ae1f-4de8-b14b-e3bf4f117fbc",
+      "name": "Append row in sheet saving",
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node: Restore Raw Text\n// Put it right before \"Code (Detect Savings)\"\n// Goal: ensure raw_message/raw_input are ALWAYS present for voice/text/photo branches\n\nfunction firstNonEmpty(...vals) {\n  for (const v of vals) {\n    if (typeof v === 'string' && v.trim()) return v.trim();\n  }\n  return '';\n}\n\nfunction safeNodeJson(name) {\n  try { return $node?.[name]?.json ?? null; } catch (e) { return null; }\n}\n\nconst j = { ...$json };\n\n// 1) Try to get text from current item\nlet t = firstNonEmpty(\n  j.raw_message,\n  j.raw_input,\n  j.text,\n  j.transcript,\n  j.caption,\n  j.message\n);\n\n// 2) If still empty — pull from earlier nodes (voice/text/photo normalizers)\n// IMPORTANT: rename node names below exactly as in your workflow\nif (!t) {\n  const audioNorm = safeNodeJson('Code (Normalize Audio Output)');\n  const imgNorm   = safeNodeJson('Code (Normalize Image Output)');\n  const textNorm1 = safeNodeJson('Code (Normalize OpenAi Text Output)');\n  const textNorm2 = safeNodeJson('Code (Normalize OpenAi Text Output)1');\n  const transcr   = safeNodeJson('Transcribe a recording1');\n\n  t = firstNonEmpty(\n    audioNorm?.text,\n    transcr?.text,\n    imgNorm?.text,\n    imgNorm?.raw_input,\n    textNorm1?.raw_input,\n    textNorm1?.raw_message,\n    textNorm2?.raw_input,\n    textNorm2?.raw_message\n  );\n}\n\n// 3) Set raw fields if missing\nif (!j.raw_message) j.raw_message = t || null;\nif (!j.raw_input)   j.raw_input   = t || null;\n\n// 4) Best-effort source_type\nif (!j.source_type) {\n  // if we have duration/seconds from transcription branch -> voice\n  const transcr = safeNodeJson('Transcribe a recording1');\n  if (transcr?.usage?.type === 'duration' || typeof transcr?.usage?.seconds === 'number') {\n    j.source_type = 'voice';\n  } else {\n    j.source_type = j.source_type ?? null;\n  }\n}\n\nreturn [{ json: j }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        1408
+      ],
+      "id": "ad0dbb27-5040-4718-a0bb-3a847d7fbb77",
+      "name": "Code (Restore Raw Text)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $json.message ?? {};\nreturn [{\n  json: {\n    ...$json,\n    chat_id: m.chat?.id,\n    normalized_text: (m.text ?? m.caption ?? '').toString().trim(),\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1408,
+        1200
+      ],
+      "id": "38072523-71fe-4afb-bb49-1aa7216076da",
+      "name": "Code — Normalize Input"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.normalized_text}}",
+                    "rightValue": "^\\/savings(@\\w+)?$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    },
+                    "id": "65559c7c-104b-4667-ac01-fdaf0fc6623b"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2c061030-42d9-41b1-9c51-2ec2a8e20458",
+                    "leftValue": "={{$json.normalized_text}}",
+                    "rightValue": "^\\/month(@\\w+)?$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2210f7ff-eb36-4509-92e8-8b16743495bf",
+                    "leftValue": "={{$json.normalized_text}}",
+                    "rightValue": "^\\/stats(@\\w+)?$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6e253f97-413f-4003-a4e5-136122ae7494",
+                    "leftValue": "={{$json.normalized_text}}",
+                    "rightValue": "^\\/undo(@\\w+)?$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f71e960b-82cb-4a25-bc12-050e956aba53",
+                    "leftValue": "={{$json.normalized_text}}",
+                    "rightValue": "^\\/undo(@\\w+)?$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1088,
+        1152
+      ],
+      "id": "53c72506-ae1e-4fd2-87d7-94d5e90c621f",
+      "name": "Switch — Router (Commands)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1618064710,
+          "mode": "list",
+          "cachedResultName": "Savings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=1618064710"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "chat_id",
+              "lookupValue": "={{$json.chat_id.toString()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -784,
+        912
+      ],
+      "id": "5daf9ce5-c87e-4e41-ad99-252a1e6825be",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $json.chat_id;\n\n// items = строки, прочитанные из Sheets\nconst rows = items.map(i => i.json);\n\nconst isNum = (v) => {\n  if (v === null || v === undefined) return false;\n  const s = String(v).replace(/\\s/g,'').replace(',', '.');\n  return s !== '' && Number.isFinite(Number(s));\n};\nconst toNum = (v) => {\n  const s = String(v ?? '').replace(/\\s/g,'').replace(',', '.');\n  const n = Number(s);\n  return Number.isFinite(n) ? n : 0;\n};\nconst normAccount = (v) => {\n  let t = (v ?? '').toString().trim();\n  if (!t) return 'Общий';\n\n  // чистим типовые “шумы” из старых строк\n  t = t.replace(/^Ление\\s+/i, '').replace(/^Накопление\\s+/i, '').trim();\n\n  const lower = t.toLowerCase();\n  if (['общее','общий','общая'].includes(lower)) return 'Общий';\n  if (lower === 'эми') return 'Эми';\n  if (lower === 'давид') return 'Давид';\n  return t.charAt(0).toUpperCase() + t.slice(1);\n};\nconst normCur = (v) => {\n  const t = (v ?? '').toString().toUpperCase();\n  if (t.includes('RUB') || t.includes('₽') || t.includes('РУБ')) return 'RUB';\n  if (t.includes('USD') || t.includes('$')) return 'USD';\n  if (t.includes('EUR') || t.includes('€')) return 'EUR';\n  return '';\n};\nconst sym = (c) => c === 'RUB' ? '₽' : (c === 'USD' ? '$' : (c === 'EUR' ? '€' : c));\nconst fmt = (n) => Math.round((n + Number.EPSILON) * 100) / 100\n  .toLocaleString('ru-RU', { maximumFractionDigits: 2 });\n\nconst map = new Map(); // account|||currency -> sum\n\nfor (const r of rows) {\n  if (String(r.chat_id ?? '') !== String(chatId)) continue;\n\n  // Пытаемся вытащить Amount из разных колонок\n  const amount =\n    isNum(r.Amount) ? toNum(r.Amount) :\n    isNum(r.Account) ? toNum(r.Account) :\n    isNum(r.Currency) ? toNum(r.Currency) :\n    0;\n\n  // Пытаемся вытащить Account\n  const accountRaw =\n    (!isNum(r.Account) && r.Account) ? r.Account :\n    (!isNum(r.Currency) && r.Currency) ? r.Currency :\n    (!isNum(r.Comment) && r.Comment) ? r.Comment :\n    'Общий';\n\n  const account = normAccount(accountRaw);\n\n  // Currency\n  const currency = normCur(r.Currency) || normCur(r.Comment) || 'RUB';\n\n  const key = `${account}|||${currency}`;\n  map.set(key, (map.get(key) || 0) + amount);\n}\n\nif (map.size === 0) {\n  return [{ json: { chat_id: chatId, text: 'Накоплений пока нет. Добавь: «накопление отпуск 400»' } }];\n}\n\nlet list = [...map.entries()].map(([k, sum]) => {\n  const [account, currency] = k.split('|||');\n  return { account, currency, sum };\n});\n\n// порядок вывода (можешь менять)\nconst pr = new Map([['Эми',1],['Давид',2],['Отпуск',3],['Общий',4]]);\nlist.sort((a,b) => (pr.get(a.account) ?? 999) - (pr.get(b.account) ?? 999) || a.account.localeCompare(b.account,'ru'));\n\nconst totals = new Map();\nfor (const x of list) totals.set(x.currency, (totals.get(x.currency) || 0) + x.sum);\n\nlet out = ['Накопления:\\n'];\nfor (const x of list) out.push(`${x.account} — ${fmt(x.sum)} ${sym(x.currency)}`);\nout.push('----------------');\n\nif (totals.size === 1) {\n  const [cur, tot] = [...totals.entries()][0];\n  out.push(`Итого — ${fmt(tot)} ${sym(cur)}`);\n} else {\n  out.push('Итого:');\n  for (const [cur, tot] of totals.entries()) out.push(`${fmt(tot)} ${sym(cur)}`);\n}\n\nreturn [{ json: { chat_id: chatId, text: out.join('\\n') } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        912
+      ],
+      "id": "596ed957-204c-43f2-a1c5-83766933ec26",
+      "name": "Code (Aggregate Savings)"
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.text}}",
+        "additionalFields": {}
+      },
+      "id": "04ee6a1b-aa8c-4967-bf4f-91cabc40d84b",
+      "name": "Telegram → Send Final Message1",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -320,
+        912
+      ],
+      "webhookId": "de45a922-5fb1-4dc7-a684-cd3e3cbfe09e",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "отчет рас в месяц\n",
+        "height": 80,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2096,
+        2368
+      ],
+      "typeVersion": 1,
+      "id": "034b8368-481f-49d0-b650-4b220deffd26",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "IF (Budget ok?)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets → Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram → Budget Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code — Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF (Has expenses?)": {
+      "main": [
+        [
+          {
+            "node": "Code (Split expenses to items)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram → Send Final Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram → Send Error Message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF (Is Duplicate?)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Code (Restore Telegram Payload)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set (Text Context)": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set (Voice Context)": {
+      "main": [
+        [
+          {
+            "node": "Telegram → Get Voice File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONFIG - User Settings": {
+      "main": [
+        [
+          {
+            "node": "Switch (Command Router)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch (Command Router)": {
+      "main": [
+        [
+          {
+            "node": "Code (Parse Budget Amount)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF (Is Duplicate?)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch (Voice/Photo/Text)": {
+      "main": [
+        [
+          {
+            "node": "Set (Voice Context)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set (Photo Context)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set (Text Context)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Parse Budget Amount)": {
+      "main": [
+        [
+          {
+            "node": "IF (Budget ok?)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram → Get Image File": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram → Get Voice File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Split expenses to items)": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Restore Telegram Payload)": {
+      "main": [
+        [
+          {
+            "node": "Switch (Voice/Photo/Text)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets → Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Telegram → Budget Updated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code (Normalize OpenAi Text Output)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Normalize OpenAi Text Output)": {
+      "main": [
+        [
+          {
+            "node": "Code (Parse openAI JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Parse openAI JSON)": {
+      "main": [
+        [
+          {
+            "node": "Code (Restore Raw Text)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Transcribe a recording1": {
+      "main": [
+        [
+          {
+            "node": "Code (Normalize Audio Output)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Normalize Audio Output)": {
+      "main": [
+        [
+          {
+            "node": "Message a model (Expense Parser Voice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Normalize Image Output)": {
+      "main": [
+        [
+          {
+            "node": "Code (Parse openAI JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Code (Normalize Image Output)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set (Photo Context)": {
+      "main": [
+        [
+          {
+            "node": "Telegram → Get Image File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model (Expense Parser Voice)": {
+      "main": [
+        [
+          {
+            "node": "Code (Normalize OpenAi Text Output)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Normalize OpenAi Text Output)1": {
+      "main": [
+        [
+          {
+            "node": "Code (Parse openAI JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Detect Savings)": {
+      "main": [
+        [
+          {
+            "node": "IF (Has expenses?)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet saving",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code (Restore Raw Text)": {
+      "main": [
+        [
+          {
+            "node": "Code (Detect Savings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Switch — Router (Commands)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch — Router (Commands)": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [],
+        [],
+        [
+          {
+            "node": "CONFIG - User Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Code (Aggregate Savings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Aggregate Savings)": {
+      "main": [
+        [
+          {
+            "node": "Telegram → Send Final Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "3f3667de-6a3a-410d-963c-1e32d4423d44",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b504de80ba0606c80552d6dc8ecc8239b5302675c46b326da7a3ad3f504308a1"
+  },
+  "id": "oMpDkTaeQsx2KpRO",
+  "tags": []
+}
