@@ -1431,7 +1431,7 @@
                 "conditions": [
                   {
                     "leftValue": "={{$json.normalized_text}}",
-                    "rightValue": "^\\/savings(@\\w+)?$",
+                    "rightValue": "^\\/savings(@\\w+)?\\s*$",
                     "operator": {
                       "type": "string",
                       "operation": "regex"
@@ -1454,7 +1454,7 @@
                   {
                     "id": "2c061030-42d9-41b1-9c51-2ec2a8e20458",
                     "leftValue": "={{$json.normalized_text}}",
-                    "rightValue": "^\\/month(@\\w+)?$",
+                    "rightValue": "^\\/month(@\\w+)?\\s*$",
                     "operator": {
                       "type": "string",
                       "operation": "regex"
@@ -1476,7 +1476,7 @@
                   {
                     "id": "2210f7ff-eb36-4509-92e8-8b16743495bf",
                     "leftValue": "={{$json.normalized_text}}",
-                    "rightValue": "^\\/goals(@\\w+)?$",
+                    "rightValue": "^\\/goals(@\\w+)?\\s*$",
                     "operator": {
                       "type": "string",
                       "operation": "regex"
@@ -1498,7 +1498,7 @@
                   {
                     "id": "6e253f97-413f-4003-a4e5-136122ae7494",
                     "leftValue": "={{$json.normalized_text}}",
-                    "rightValue": "^\\/undo(@\\w+)?$",
+                    "rightValue": "^\\/undo(@\\w+)?\\s*$",
                     "operator": {
                       "type": "string",
                       "operation": "regex"
@@ -1520,7 +1520,7 @@
                   {
                     "id": "f71e960b-82cb-4a25-bc12-050e956aba53",
                     "leftValue": "={{$json.normalized_text}}",
-                    "rightValue": "^\\/setgoal(@\\w+)?\\s+.+",
+                    "rightValue": "^\\/setgoal(@\\w+)?(?:\\s+.+)?\\s*$",
                     "operator": {
                       "type": "string",
                       "operation": "regex"
@@ -1542,7 +1542,7 @@
                   {
                     "id": "bed7f424-ac04-47e3-8117-73ae712a1f22",
                     "leftValue": "={{$json.normalized_text}}",
-                    "rightValue": "^\\/help(@\\w+)?$",
+                    "rightValue": "^\\/help(@\\w+)?\\s*$",
                     "operator": {
                       "type": "string",
                       "operation": "regex"
@@ -1822,7 +1822,8 @@
           "id": "f8lG4xmO3JMJOVE4",
           "name": "Google Service Account account 2"
         }
-      }
+      },
+      "executeOnce": true
     },
     {
       "parameters": {
@@ -1856,7 +1857,8 @@
           "id": "f8lG4xmO3JMJOVE4",
           "name": "Google Service Account account 2"
         }
-      }
+      },
+      "executeOnce": true
     },
     {
       "parameters": {
@@ -1894,7 +1896,7 @@
     },
     {
       "parameters": {
-        "jsCode": "function num(v){const n=Number(String(v??'').replace(/\\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0}\nfunction pDate(v){const s=String(v??'').trim();let m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);if(m)return new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));m=s.match(/^(\\d{2})\\.(\\d{2})\\.(\\d{4})/);if(m)return new Date(Date.UTC(+m[3],+m[2]-1,+m[1]));return null}\nfunction safeItems(name){try{return $items(name).map(i=>i.json)}catch(e){return []}}\nconst now=new Date(Date.now()+3*3600*1000);const y=now.getUTCFullYear(),mo=now.getUTCMonth();\nconst start=new Date(Date.UTC(y,mo-1,1)),end=new Date(Date.UTC(y,mo,1)),prevS=new Date(Date.UTC(y,mo-2,1)),prevE=new Date(Date.UTC(y,mo-1,1));\nconst log=safeItems('Get Log (/month)');\nconst sav=safeItems('Get Savings (/month)');\nconst oblRaw=safeItems('Get Obligations');\nconst obl=oblRaw.filter(r=>!r.error && String(r.active??'true').toLowerCase()!=='false');\nconst inR=(d,a,b)=>d&&d>=a&&d<b;\nlet exp=0,savSum=0,prevExp=0; const cat={};\nfor(const r of log){if(String(r.IsDeleted??'').toLowerCase()==='true')continue; const d=pDate(r.Date||r.date); const a=num(r.Amount||r.amount); if(inR(d,start,end)){exp+=a; const c=String(r.Category||'Другое'); cat[c]=(cat[c]||0)+a;} if(inR(d,prevS,prevE)) prevExp+=a;}\nfor(const r of sav){if(String(r.IsDeleted??'').toLowerCase()==='true')continue; const d=pDate(r.Date||r.date); const a=num(r.Amount||r.amount); if(inR(d,start,end))savSum+=a;}\nconst top=Object.entries(cat).sort((a,b)=>b[1]-a[1]).slice(0,3);\nconst pct=prevExp?(((exp-prevExp)/prevExp)*100).toFixed(1)+'%':'нет данных';\nconst open=[];\nfor(const o of obl){const mt=String(o.match_text||'').toLowerCase(); if(!mt){open.push(o.name||''); continue;} let ok=false; for(const r of log){const d=pDate(r.Date||r.date); if(!inR(d,start,end))continue; const hay=(String(r.Item||'')+' '+String(r.Raw_Input||'')+' '+String(r.Comment||r.Description||'')).toLowerCase(); if(hay.includes(mt)){ok=true;break;}} if(!ok)open.push(o.name||mt)}\nconst period=`${start.getUTCFullYear()}-${String(start.getUTCMonth()+1).padStart(2,'0')}`;\nconst obligationsText = obl.length ? (open.join(', ')||'нет') : 'лист Obligations не найден/пуст';\nconst text=`📊 Отчёт за ${period} (МСК)\nРасходы: ${Math.round(exp)}\nНакопления: ${Math.round(savSum)}\nИтог: ${Math.round(exp-savSum)}\nTop-3: ${top.map(([k,v])=>`${k}: ${Math.round(v)}`).join(', ')||'—'}\nИзм. к пред. мес: ${pct}\nНе закрыты обязательные: ${obligationsText}`;\nreturn [{json:{chat_id:$json.chat_id,text}}];"
+        "jsCode": "function num(v){const n=Number(String(v??'').replace(/\\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0}\nfunction pDate(v){const s=String(v??'').trim();let m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);if(m)return new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));m=s.match(/^(\\d{2})\\.(\\d{2})\\.(\\d{4})/);if(m)return new Date(Date.UTC(+m[3],+m[2]-1,+m[1]));return null}\nfunction safeItems(name){try{return $items(name).map(i=>i.json)}catch(e){return []}}\nconst now=new Date(Date.now()+3*3600*1000);const y=now.getUTCFullYear(),mo=now.getUTCMonth();\nconst start=new Date(Date.UTC(y,mo-1,1)),end=new Date(Date.UTC(y,mo,1)),prevS=new Date(Date.UTC(y,mo-2,1)),prevE=new Date(Date.UTC(y,mo-1,1));\nconst log=safeItems('Get Log (/month)');\nconst sav=safeItems('Get Savings (/month)');\nconst oblRaw=safeItems('Get Obligations');\nconst obl=oblRaw.filter(r=>!r.error && String(r.active??'true').toLowerCase()!=='false');\nconst inR=(d,a,b)=>d&&d>=a&&d<b;\nlet exp=0,savSum=0,prevExp=0; const cat={};\nfor(const r of log){if(String(r.IsDeleted??'').toLowerCase()==='true')continue; const d=pDate(r.Date||r.date); const a=num(r.Amount||r.amount); if(inR(d,start,end)){exp+=a; const c=String(r.Category||'Другое'); cat[c]=(cat[c]||0)+a;} if(inR(d,prevS,prevE)) prevExp+=a;}\nfor(const r of sav){if(String(r.IsDeleted??'').toLowerCase()==='true')continue; const d=pDate(r.Date||r.date); const a=num(r.Amount||r.amount); if(inR(d,start,end))savSum+=a;}\nconst top=Object.entries(cat).sort((a,b)=>b[1]-a[1]).slice(0,3);\nconst pct=prevExp?(((exp-prevExp)/prevExp)*100).toFixed(1)+'%':'нет данных';\nconst open=[];\nfor(const o of obl){const mt=String(o.match_text||'').toLowerCase(); if(!mt){open.push(o.name||''); continue;} let ok=false; for(const r of log){const d=pDate(r.Date||r.date); if(!inR(d,start,end))continue; const hay=(String(r.Item||'')+' '+String(r.Raw_Input||'')+' '+String(r.Comment||r.Description||'')).toLowerCase(); if(hay.includes(mt)){ok=true;break;}} if(!ok)open.push(o.name||mt)}\nconst period=`${start.getUTCFullYear()}-${String(start.getUTCMonth()+1).padStart(2,'0')}`;\nconst obligationsText = obl.length ? (open.join(', ')||'нет') : 'лист Obligations не найден/пуст';\nconst text=`📊 Отчёт за ${period} (МСК)\\nРасходы: ${Math.round(exp)}\\nНакопления: ${Math.round(savSum)}\\nИтог: ${Math.round(exp-savSum)}\\nTop-3: ${top.map(([k,v])=>`${k}: ${Math.round(v)}`).join(', ')||'—'}\\nИзм. к пред. мес: ${pct}\\nНе закрыты обязательные: ${obligationsText}`;\nconst chatId = $('Code — Normalize Input').item.json.chat_id;\nreturn [{json:{chat_id:chatId,text}}];"
       },
       "id": "c5838757-c162-45d4-ad36-7e65e178e023",
       "name": "Code (/month report)",
@@ -1907,7 +1909,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{$json.chat_id}}",
+        "chatId": "={{ $('Code — Normalize Input').item.json.chat_id }}",
         "text": "={{$json.text}}",
         "additionalFields": {}
       },
@@ -1945,7 +1947,7 @@
           "values": [
             {
               "lookupColumn": "chat_id",
-              "lookupValue": "={{$json.chat_id.toString()}}"
+              "lookupValue": "={{ String($('Code — Normalize Input').item.json.chat_id || '') }}"
             }
           ]
         },
@@ -1989,7 +1991,7 @@
           "values": [
             {
               "lookupColumn": "chat_id",
-              "lookupValue": "={{$json.chat_id.toString()}}"
+              "lookupValue": "={{ String($('Code — Normalize Input').item.json.chat_id || '') }}"
             }
           ]
         },
@@ -2008,11 +2010,12 @@
           "id": "f8lG4xmO3JMJOVE4",
           "name": "Google Service Account account 2"
         }
-      }
+      },
+      "executeOnce": true
     },
     {
       "parameters": {
-        "jsCode": "function num(v){const n=Number(String(v??'').replace(/\\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0}\nfunction safeItems(name){try{return $items(name).map(i=>i.json)}catch(e){return []}}\nconst goalsRaw=safeItems('Get Goals');\nconst goals=goalsRaw.filter(g=>!g.error && String(g.active??'true').toLowerCase()!=='false');\nconst sav=safeItems('Get Savings (/goals)');\nconst now=new Date(Date.now()+3*3600*1000);\nif(!goals.length){\n  const missingSheet = goalsRaw.some(g=>g.error) || goalsRaw.length===0;\n  const text = missingSheet\n    ? 'Лист Goals не найден. Создайте лист Goals с колонками: chat_id, goal_name, target_amount, currency, target_date, created_at, active.'\n    : 'Нет активных целей. Добавьте цель: /setgoal <name> <amount> <YYYY-MM-DD>';\n  return [{json:{chat_id:$json.chat_id,text}}];\n}\nlet blocks=[];\nfor(const g of goals){\n  const name=String(g.goal_name||'').trim();\n  let fact=0;\n  for(const s of sav){if(String(s.Account||s.savings_account||'').trim().toLowerCase()===name.toLowerCase()) fact+=num(s.Amount||s.amount)}\n  const target=num(g.target_amount);\n  const left=Math.max(target-fact,0);\n  const td=new Date((g.target_date||'').slice(0,10)+'T00:00:00Z');\n  const days=Math.ceil((td-now)/86400000);\n  const perWeek=days>0?(left/(days/7)):null;\n  blocks.push(`🎯 ${name}\nЦель: ${Math.round(target)} ${g.currency||'RUB'}\nФакт: ${Math.round(fact)}\nОсталось: ${Math.round(left)}\nДней: ${days}\nВ неделю: ${perWeek?Math.round(perWeek):'дедлайн прошёл'}`)\n}\nreturn [{json:{chat_id:$json.chat_id,text:blocks.join('\\n\\n')}}];"
+        "jsCode": "function num(v){const n=Number(String(v??'').replace(/\\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0}\nfunction safeItems(name){try{return $items(name).map(i=>i.json)}catch(e){return []}}\nconst goalsRaw=safeItems('Get Goals');\nconst goals=goalsRaw.filter(g=>!g.error && String(g.active??'true').toLowerCase()!=='false');\nconst sav=safeItems('Get Savings (/goals)');\nconst now=new Date(Date.now()+3*3600*1000);\nconst chatId = $('Code — Normalize Input').item.json.chat_id;\nif(!goals.length){\n  const missingSheet = goalsRaw.some(g=>g.error) || goalsRaw.length===0;\n  const text = missingSheet\n    ? 'Лист Goals не найден. Создайте лист Goals с колонками: chat_id, goal_name, target_amount, currency, target_date, created_at, active.'\n    : 'Нет активных целей. Добавьте цель: /setgoal <name> <amount> <YYYY-MM-DD>';\n  return [{json:{chat_id:chatId,text}}];\n}\nlet blocks=[];\nfor(const g of goals){\n  const name=String(g.goal_name||'').trim();\n  let fact=0;\n  for(const s of sav){if(String(s.Account||s.savings_account||'').trim().toLowerCase()===name.toLowerCase()) fact+=num(s.Amount||s.amount)}\n  const target=num(g.target_amount);\n  const left=Math.max(target-fact,0);\n  const td=new Date((g.target_date||'').slice(0,10)+'T00:00:00Z');\n  const days=Math.ceil((td-now)/86400000);\n  const perWeek=days>0?(left/(days/7)):null;\n  blocks.push(`🎯 ${name}\\nЦель: ${Math.round(target)} ${g.currency||'RUB'}\\nФакт: ${Math.round(fact)}\\nОсталось: ${Math.round(left)}\\nДней: ${days}\\nВ неделю: ${perWeek?Math.round(perWeek):'дедлайн прошёл'}`)\n}\nreturn [{json:{chat_id:chatId,text:blocks.join('\\n\\n')}}];"
       },
       "id": "a7976c1f-fa81-4e52-bffa-83b5eabc3d21",
       "name": "Code (/goals report)",
@@ -2025,7 +2028,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{$json.chat_id}}",
+        "chatId": "={{ $('Code — Normalize Input').item.json.chat_id }}",
         "text": "={{$json.text}}",
         "additionalFields": {}
       },
@@ -2046,7 +2049,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const t=String($json.normalized_text||'').trim();\nconst m=t.match(/^\\/setgoal(?:@\\w+)?\\s+(.+)\\s+(\\d+(?:[\\.,]\\d+)?)\\s+(\\d{4}-\\d{2}-\\d{2})$/i);\nif(!m) return [{json:{...$json,ok:false,error:'Формат: /setgoal <name> <amount> <YYYY-MM-DD>'}}];\nreturn [{json:{...$json,ok:true,goal_name:m[1].trim(),target_amount:m[2].replace(',','.'),target_date:m[3],currency:'RUB',created_at:new Date().toISOString(),active:true,text:`Цель сохранена: ${m[1].trim()} — ${m[2]} RUB до ${m[3]}`}}];"
+        "jsCode": "const t=String($json.normalized_text||'').trim();\nif (/^\\/setgoal(?:@\\w+)?\\s*$/i.test(t)) {\n  return [{json:{...$json,ok:false,error:'Формат: /setgoal <name> <amount> <YYYY-MM-DD>'}}];\n}\nconst m=t.match(/^\\/setgoal(?:@\\w+)?\\s+(.+)\\s+(\\d+(?:[\\.,]\\d+)?)\\s+(\\d{4}-\\d{2}-\\d{2})\\s*$/i);\nif(!m) return [{json:{...$json,ok:false,error:'Формат: /setgoal <name> <amount> <YYYY-MM-DD>'}}];\nreturn [{json:{...$json,ok:true,goal_name:m[1].trim(),target_amount:m[2].replace(',','.'),target_date:m[3],currency:'RUB',created_at:new Date().toISOString(),active:true,text:`Цель сохранена: ${m[1].trim()} — ${m[2]} RUB до ${m[3]}`}}];"
       },
       "id": "d3e285ec-d4fe-4a74-9b16-ceebfe51a19b",
       "name": "Code (/setgoal parse)",
@@ -2158,7 +2161,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{$json.chat_id}}",
+        "chatId": "={{ $('Code — Normalize Input').item.json.chat_id }}",
         "text": "={{$json.text}}",
         "additionalFields": {}
       },
