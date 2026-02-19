@@ -10,7 +10,8 @@
               "minutesInterval": 30
             }
           ]
-        }
+        },
+        "timezone": "Europe/Moscow"
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
