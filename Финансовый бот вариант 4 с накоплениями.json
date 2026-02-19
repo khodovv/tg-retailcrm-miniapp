@@ -272,7 +272,8 @@
         "chatId": "={{ $node[\"Telegram Trigger\"].json.message.chat.id }}",
         "text": "={{ $json.summary_text || \"Готово ✅\" }}",
         "additionalFields": {
-          "reply_to_message_id": "={{ $node[\"Telegram Trigger\"].json.message.message_id }}"
+          "reply_to_message_id": "={{ $node[\"Telegram Trigger\"].json.message.message_id }}",
+          "reply_markup": "={\"inline_keyboard\":[[{\"text\":\"Отменить\",\"callback_data\":\"undo:last\"},{\"text\":\"Показать баланс\",\"callback_data\":\"balance:show\"}]]}"
         }
       },
       "id": "8c42b6c8-1fd4-4ca6-b3b4-a797a504d0c8",
@@ -634,7 +635,8 @@
     {
       "parameters": {
         "updates": [
-          "message"
+          "message",
+          "callback_query"
         ],
         "additionalFields": {}
       },
@@ -1126,11 +1128,13 @@
           "interval": [
             {
               "field": "months",
-              "triggerAtDayOfMonth": 30,
-              "triggerAtHour": 22
+              "triggerAtDayOfMonth": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
             }
           ]
-        }
+        },
+        "timezone": "Europe/Moscow"
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
@@ -1401,7 +1405,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const m = $json.message ?? {};\nreturn [{\n  json: {\n    ...$json,\n    chat_id: m.chat?.id,\n    normalized_text: (m.text ?? m.caption ?? '').toString().trim(),\n  }\n}];"
+        "jsCode": "const cb = $json.callback_query ?? null;\nconst m = $json.message ?? cb?.message ?? {};\nconst text = (m.text ?? m.caption ?? '').toString().trim();\nconst callbackData = (cb?.data ?? '').toString().trim();\nconst normalizedText = callbackData || text;\nreturn [{ json: {\n  ...$json,\n  chat_id: cb?.from?.id ?? m.chat?.id ?? null,\n  message_id: cb?.message?.message_id ?? m.message_id ?? null,\n  update_id: $json.update_id ?? null,\n  raw_input: text || callbackData || null,\n  normalized_text: normalizedText,\n  input_type: cb ? 'callback_query' : (m.voice ? 'voice' : (m.photo ? 'photo' : 'text')),\n  callback_data: callbackData || null,\n  is_callback: !!cb,\n}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1472,7 +1476,7 @@
                   {
                     "id": "2210f7ff-eb36-4509-92e8-8b16743495bf",
                     "leftValue": "={{$json.normalized_text}}",
-                    "rightValue": "^\\/stats(@\\w+)?$",
+                    "rightValue": "^\\/goals(@\\w+)?$",
                     "operator": {
                       "type": "string",
                       "operation": "regex"
@@ -1516,7 +1520,29 @@
                   {
                     "id": "f71e960b-82cb-4a25-bc12-050e956aba53",
                     "leftValue": "={{$json.normalized_text}}",
-                    "rightValue": "^\\/undo(@\\w+)?$",
+                    "rightValue": "^\\/setgoal(@\\w+)?\\s+.+",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bed7f424-ac04-47e3-8117-73ae712a1f22",
+                    "leftValue": "={{$json.normalized_text}}",
+                    "rightValue": "^\\/help(@\\w+)?$",
                     "operator": {
                       "type": "string",
                       "operation": "regex"
@@ -1632,6 +1658,635 @@
       "typeVersion": 1,
       "id": "034b8368-481f-49d0-b650-4b220deffd26",
       "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f33d0e04-17bc-4218-826f-0c0ef71d0914",
+              "leftValue": "={{$json.is_callback}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a85efe52-67b5-4e48-8401-3882af56e7a7",
+      "name": "IF — Is Callback Query",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1320,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "12f26249-9f2c-4f0c-854a-818b16518b9b",
+                    "leftValue": "={{$json.callback_data}}",
+                    "rightValue": "^undo:last$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6efb33cb-3308-435c-8db2-78ca6273c739",
+                    "leftValue": "={{$json.callback_data}}",
+                    "rightValue": "^balance:show$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "44b79ea1-adf2-46d2-8231-586c020baf3d",
+      "name": "Switch — Router (Callbacks)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1120,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{chat_id:$json.chat_id,text:\"📘 Справка\n\nКоманды:\n• /savings\n• /month\n• /goals\n• /setgoal <name> <amount> <YYYY-MM-DD>\n• /help\n\nПримеры:\n• кофе 300\n• такси 850\n• накопление отпуск 400\n• кредит обучение 5000\"}}];"
+      },
+      "id": "8aa3fc0b-8c25-4b8e-a520-f68891964867",
+      "name": "Code (/help text)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        1460
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.text}}",
+        "additionalFields": {}
+      },
+      "id": "f275b554-c89d-484f-9db3-9da4fb88a3da",
+      "name": "Telegram → Help",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        1460
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2124995326,
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=2124995326"
+        },
+        "options": {}
+      },
+      "id": "1525d644-fafb-43e1-bab6-be761aad0ff8",
+      "name": "Get Log (/month)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -760,
+        1080
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1618064710,
+          "mode": "list",
+          "cachedResultName": "Savings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=1618064710"
+        },
+        "options": {}
+      },
+      "id": "0746d7a2-6781-4088-97a0-5c76dc9a0201",
+      "name": "Get Savings (/month)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -560,
+        1080
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Obligations"
+        },
+        "options": {}
+      },
+      "id": "f9592d3c-acce-45e2-91b0-f42fbd186b74",
+      "name": "Get Obligations",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -360,
+        1080
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){const n=Number(String(v??'').replace(/\\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0}\nfunction pDate(v){const s=String(v??'').trim();let m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);if(m)return new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));m=s.match(/^(\\d{2})\\.(\\d{2})\\.(\\d{4})/);if(m)return new Date(Date.UTC(+m[3],+m[2]-1,+m[1]));return null}\nconst now=new Date(Date.now()+3*3600*1000);const y=now.getUTCFullYear(),mo=now.getUTCMonth();\nconst start=new Date(Date.UTC(y,mo-1,1)),end=new Date(Date.UTC(y,mo,1)),prevS=new Date(Date.UTC(y,mo-2,1)),prevE=new Date(Date.UTC(y,mo-1,1));\nconst log=$items('Get Log (/month)').map(i=>i.json); const sav=$items('Get Savings (/month)').map(i=>i.json); const obl=$items('Get Obligations').map(i=>i.json).filter(r=>String(r.active??'true').toLowerCase()!=='false');\nconst inR=(d,a,b)=>d&&d>=a&&d<b;\nlet exp=0,savSum=0,prevExp=0; const cat={};\nfor(const r of log){if(String(r.IsDeleted??'').toLowerCase()==='true')continue; const d=pDate(r.Date||r.date); const a=num(r.Amount||r.amount); if(inR(d,start,end)){exp+=a; const c=String(r.Category||'Другое'); cat[c]=(cat[c]||0)+a;} if(inR(d,prevS,prevE)) prevExp+=a;}\nfor(const r of sav){if(String(r.IsDeleted??'').toLowerCase()==='true')continue; const d=pDate(r.Date||r.date); const a=num(r.Amount||r.amount); if(inR(d,start,end))savSum+=a;}\nconst top=Object.entries(cat).sort((a,b)=>b[1]-a[1]).slice(0,3);\nconst pct=prevExp?(((exp-prevExp)/prevExp)*100).toFixed(1)+'%':'нет данных';\nconst closed=[],open=[];\nfor(const o of obl){const mt=String(o.match_text||'').toLowerCase(); if(!mt){open.push(o.name||''); continue;} let ok=false; for(const r of log){const d=pDate(r.Date||r.date); if(!inR(d,start,end))continue; const hay=(String(r.Item||'')+' '+String(r.Raw_Input||'')+' '+String(r.Comment||r.Description||'')).toLowerCase(); if(hay.includes(mt)){ok=true;break;}} (ok?closed:open).push(o.name||mt)}\nconst period=`${start.getUTCFullYear()}-${String(start.getUTCMonth()+1).padStart(2,'0')}`;\nconst text=`📊 Отчёт за ${period} (МСК)\nРасходы: ${Math.round(exp)}\nНакопления: ${Math.round(savSum)}\nИтог: ${Math.round(exp-savSum)}\nTop-3: ${top.map(([k,v])=>`${k}: ${Math.round(v)}`).join(', ')||'—'}\nИзм. к пред. мес: ${pct}\nНе закрыты обязательные: ${open.join(', ')||'нет'}`;\nreturn [{json:{chat_id:$json.chat_id,text}}];"
+      },
+      "id": "c5838757-c162-45d4-ad36-7e65e178e023",
+      "name": "Code (/month report)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        1080
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.text}}",
+        "additionalFields": {}
+      },
+      "id": "73b6c1db-113b-4414-92a4-ba9f4c81ab73",
+      "name": "Telegram → Month Report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        40,
+        1080
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Goals"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "chat_id",
+              "lookupValue": "={{$json.chat_id.toString()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f003602c-b9e3-4d72-8cb6-abcbe786ffbb",
+      "name": "Get Goals",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -760,
+        1320
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1618064710,
+          "mode": "list",
+          "cachedResultName": "Savings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=1618064710"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "chat_id",
+              "lookupValue": "={{$json.chat_id.toString()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6bb3a6af-fe32-43be-b387-d038e6d0b3a2",
+      "name": "Get Savings (/goals)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -560,
+        1320
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){const n=Number(String(v??'').replace(/\\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0}\nconst goals=$items('Get Goals').map(i=>i.json).filter(g=>String(g.active??'true').toLowerCase()!=='false');\nconst sav=$items('Get Savings (/goals)').map(i=>i.json);\nconst now=new Date(Date.now()+3*3600*1000);\nlet blocks=[];\nfor(const g of goals){const name=String(g.goal_name||'').trim(); let fact=0; for(const s of sav){if(String(s.Account||s.savings_account||'').trim().toLowerCase()===name.toLowerCase()) fact+=num(s.Amount||s.amount);} const target=num(g.target_amount); const left=Math.max(target-fact,0); const td=new Date((g.target_date||'').slice(0,10)+'T00:00:00Z'); const days=Math.ceil((td-now)/86400000); const perWeek=days>0?(left/(days/7)):null; blocks.push(`🎯 ${name}\nЦель: ${Math.round(target)} ${g.currency||'RUB'}\nФакт: ${Math.round(fact)}\nОсталось: ${Math.round(left)}\nДней: ${days}\nВ неделю: ${perWeek?Math.round(perWeek):'дедлайн прошёл'}`)}\nreturn [{json:{chat_id:$json.chat_id,text:blocks.length?blocks.join('\n\n'):'Нет активных целей'}}];"
+      },
+      "id": "a7976c1f-fa81-4e52-bffa-83b5eabc3d21",
+      "name": "Code (/goals report)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -360,
+        1320
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.text}}",
+        "additionalFields": {}
+      },
+      "id": "cd87f499-a688-4576-ae48-f2ef1bb7edf7",
+      "name": "Telegram → Goals",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        1320
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const t=String($json.normalized_text||'').trim();\nconst m=t.match(/^\\/setgoal(?:@\\w+)?\\s+(.+)\\s+(\\d+(?:[\\.,]\\d+)?)\\s+(\\d{4}-\\d{2}-\\d{2})$/i);\nif(!m) return [{json:{...$json,ok:false,error:'Формат: /setgoal <name> <amount> <YYYY-MM-DD>'}}];\nreturn [{json:{...$json,ok:true,goal_name:m[1].trim(),target_amount:m[2].replace(',','.'),target_date:m[3],currency:'RUB',created_at:new Date().toISOString(),active:true,text:`Цель сохранена: ${m[1].trim()} — ${m[2]} RUB до ${m[3]}`}}];"
+      },
+      "id": "d3e285ec-d4fe-4a74-9b16-ceebfe51a19b",
+      "name": "Code (/setgoal parse)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        1240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b01e633f-2970-4b73-b5a0-89a5712d957e",
+              "leftValue": "={{$json.ok}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "30c10dc8-62ba-4f37-b436-5d9e90ac1a01",
+      "name": "IF (/setgoal valid)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -560,
+        1240
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Goals"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chat_id": "={{$json.chat_id}}",
+            "goal_name": "={{$json.goal_name}}",
+            "target_amount": "={{$json.target_amount}}",
+            "currency": "={{$json.currency}}",
+            "target_date": "={{$json.target_date}}",
+            "created_at": "={{$json.created_at}}",
+            "active": "={{$json.active}}"
+          },
+          "matchingColumns": [
+            "chat_id",
+            "goal_name"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d3d222b5-4ec7-49d1-94e3-c38dea86bef7",
+      "name": "Append or update Goals",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -360,
+        1200
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{chat_id:$json.chat_id,text:$json.error||\"Ошибка\"}}];"
+      },
+      "id": "1ddd3c2f-500a-4b58-9ccb-6c503d2958be",
+      "name": "Code (/setgoal error text)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -360,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.text}}",
+        "additionalFields": {}
+      },
+      "id": "6c1fe9ac-5cc3-4562-8a87-da329b652bc2",
+      "name": "Telegram → SetGoal",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        1240
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{chat_id:$json.chat_id,text:\"↩️ Undo: для MVP используйте /undo (или включите колонку IsDeleted в таблицах).\"}}];"
+      },
+      "id": "6a1d8bcf-ce14-4a65-aa59-570f1b6eaf41",
+      "name": "Code (Undo Last)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2124995326,
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=2124995326"
+        },
+        "options": {}
+      },
+      "id": "90a605c2-6a10-44cd-8a50-93959952ca9a",
+      "name": "Get Log (balance)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -760,
+        820
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1618064710,
+          "mode": "list",
+          "cachedResultName": "Savings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=1618064710"
+        },
+        "options": {}
+      },
+      "id": "46226316-8554-4fa7-9b1a-b2af1ab50fe4",
+      "name": "Get Savings (balance)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -560,
+        820
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){const n=Number(String(v??'').replace(/\\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0}\nlet e=0,s=0;for(const r of $items('Get Log (balance)').map(i=>i.json)){if(String(r.IsDeleted??'').toLowerCase()==='true')continue;e+=num(r.Amount||r.amount)}for(const r of $items('Get Savings (balance)').map(i=>i.json)){if(String(r.IsDeleted??'').toLowerCase()==='true')continue;s+=num(r.Amount||r.amount)}\nreturn [{json:{chat_id:$json.chat_id,text:`💳 Баланс за всё время: ${Math.round(s-e)} RUB\nНакопления: ${Math.round(s)}\nРасходы: ${Math.round(e)}`}}];"
+      },
+      "id": "164d6550-f33f-41c4-b030-74e7b5afdcbb",
+      "name": "Code (Balance Text)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -360,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.text}}",
+        "additionalFields": {}
+      },
+      "id": "5a1bfde3-ae74-405d-9531-d750ef431c16",
+      "name": "Telegram → Callback Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        900
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -2033,7 +2688,7 @@
       "main": [
         [
           {
-            "node": "Switch — Router (Commands)",
+            "node": "IF — Is Callback Query",
             "type": "main",
             "index": 0
           }
@@ -2049,10 +2704,41 @@
             "index": 0
           }
         ],
-        [],
-        [],
-        [],
-        [],
+        [
+          {
+            "node": "Get Log (/month)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Goals",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code (Undo Last)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code (/setgoal parse)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code (/help text)",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "CONFIG - User Settings",
@@ -2078,6 +2764,232 @@
         [
           {
             "node": "Telegram → Send Final Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Is Callback Query": {
+      "main": [
+        [
+          {
+            "node": "Switch — Router (Callbacks)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch — Router (Commands)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (/help text)": {
+      "main": [
+        [
+          {
+            "node": "Telegram → Help",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Log (/month)": {
+      "main": [
+        [
+          {
+            "node": "Get Savings (/month)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Savings (/month)": {
+      "main": [
+        [
+          {
+            "node": "Get Obligations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Obligations": {
+      "main": [
+        [
+          {
+            "node": "Code (/month report)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (/month report)": {
+      "main": [
+        [
+          {
+            "node": "Telegram → Month Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Goals": {
+      "main": [
+        [
+          {
+            "node": "Get Savings (/goals)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Savings (/goals)": {
+      "main": [
+        [
+          {
+            "node": "Code (/goals report)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (/goals report)": {
+      "main": [
+        [
+          {
+            "node": "Telegram → Goals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (/setgoal parse)": {
+      "main": [
+        [
+          {
+            "node": "IF (/setgoal valid)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF (/setgoal valid)": {
+      "main": [
+        [
+          {
+            "node": "Append or update Goals",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code (/setgoal error text)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update Goals": {
+      "main": [
+        [
+          {
+            "node": "Telegram → SetGoal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (/setgoal error text)": {
+      "main": [
+        [
+          {
+            "node": "Telegram → SetGoal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch — Router (Callbacks)": {
+      "main": [
+        [
+          {
+            "node": "Code (Undo Last)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Log (balance)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CONFIG - User Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Undo Last)": {
+      "main": [
+        [
+          {
+            "node": "Telegram → Callback Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Log (balance)": {
+      "main": [
+        [
+          {
+            "node": "Get Savings (balance)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Savings (balance)": {
+      "main": [
+        [
+          {
+            "node": "Code (Balance Text)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Balance Text)": {
+      "main": [
+        [
+          {
+            "node": "Telegram → Callback Reply",
             "type": "main",
             "index": 0
           }

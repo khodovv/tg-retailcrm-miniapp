@@ -1,0 +1,253 @@
+{
+  "name": "monthly-report",
+  "nodes": [
+    {
+      "id": "571bcc5a-efbe-48c0-8dcf-8cafe1a0a88d",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        -1000,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtDayOfMonth": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        },
+        "timezone": "Europe/Moscow"
+      },
+      "typeVersion": 1.2
+    },
+    {
+      "id": "422ff563-9b38-4e67-848c-f394cf06ee8a",
+      "name": "Set Recipients",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -820,
+        300
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"chat_ids\":[34676754]}",
+        "options": {}
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "d76eea53-4a6f-4565-89a3-b9a9d2c74e0a",
+      "name": "Get Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -640,
+        300
+      ],
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2124995326,
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=2124995326"
+        },
+        "options": {}
+      },
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "id": "c9a6f3bd-67fe-46c6-9062-7a5f5128a396",
+      "name": "Get Savings",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -460,
+        300
+      ],
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1618064710,
+          "mode": "list",
+          "cachedResultName": "Savings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=1618064710"
+        },
+        "options": {}
+      },
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "id": "9c61519b-15db-4e00-b194-aedd72e023d7",
+      "name": "Get Obligations",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -280,
+        300
+      ],
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Obligations"
+        },
+        "options": {}
+      },
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "id": "dc2feb57-0d1b-47e4-881c-1d85ab0c0556",
+      "name": "Code Build Report",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -80,
+        300
+      ],
+      "parameters": {
+        "jsCode": "function num(v){const n=Number(String(v??'').replace(/\\s/g,'').replace(',','.'));return Number.isFinite(n)?n:0}\nfunction pDate(v){const s=String(v??'').trim();let m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);if(m)return new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));m=s.match(/^(\\d{2})\\.(\\d{2})\\.(\\d{4})/);if(m)return new Date(Date.UTC(+m[3],+m[2]-1,+m[1]));return null}\nconst now=new Date(Date.now()+3*3600*1000);const y=now.getUTCFullYear(),mo=now.getUTCMonth();const start=new Date(Date.UTC(y,mo-1,1)),end=new Date(Date.UTC(y,mo,1));\nconst log=$items('Get Log').map(i=>i.json),sav=$items('Get Savings').map(i=>i.json),obl=$items('Get Obligations').map(i=>i.json);\nlet exp=0,savSum=0;for(const r of log){if(String(r.IsDeleted??'').toLowerCase()==='true')continue;const d=pDate(r.Date||r.date);if(d&&d>=start&&d<end)exp+=num(r.Amount||r.amount)}\nfor(const r of sav){if(String(r.IsDeleted??'').toLowerCase()==='true')continue;const d=pDate(r.Date||r.date);if(d&&d>=start&&d<end)savSum+=num(r.Amount||r.amount)}\nconst open=[];for(const o of obl){const mt=String(o.match_text||'').toLowerCase();if(!mt){open.push(o.name||'');continue;}let ok=false;for(const r of log){const d=pDate(r.Date||r.date);if(!(d&&d>=start&&d<end))continue;const hay=(String(r.Item||'')+' '+String(r.Raw_Input||'')+' '+String(r.Comment||r.Description||'')).toLowerCase();if(hay.includes(mt)){ok=true;break;}}if(!ok)open.push(o.name||mt)}\nconst recipients=($items('Set Recipients')[0]?.json?.chat_ids)||[];const period=`${start.getUTCFullYear()}-${String(start.getUTCMonth()+1).padStart(2,'0')}`;const text=`📊 Авто-отчёт за ${period} (МСК)\\nРасходы: ${Math.round(exp)}\\nНакопления: ${Math.round(savSum)}\\nИтог: ${Math.round(exp-savSum)}\\nНе закрыты обязательные: ${open.join(', ')||'нет'}`;\nreturn recipients.map(id=>({json:{chat_id:id,text}}));"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "c2c93762-e051-4937-8190-17960ff117dd",
+      "name": "Telegram Send Report",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        120,
+        300
+      ],
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.text}}",
+        "additionalFields": {}
+      },
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Recipients": {
+      "main": [
+        [
+          {
+            "node": "Get Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Log": {
+      "main": [
+        [
+          {
+            "node": "Get Savings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Savings": {
+      "main": [
+        [
+          {
+            "node": "Get Obligations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Obligations": {
+      "main": [
+        [
+          {
+            "node": "Code Build Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Build Report": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "pinData": {},
+  "versionId": "4ca3df4d-1dd3-4f5b-8967-9b282ed0432b",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "e623030f-3ced-464c-9075-43194a79b41f"
+}
