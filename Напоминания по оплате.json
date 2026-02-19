@@ -1,0 +1,410 @@
+{
+  "name": "напоминания оплата",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "968ad085-fab1-4a20-82ab-b34884abe49f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node: Run Once for All Items\n// Needs two inputs available in workflow:\n// - $items(\"Get Reminders\")  -> rows from Reminders sheet\n// - $items(\"Get Log\")        -> rows from Log sheet\n\nconst TZ_OFFSET_MS = 3 * 60 * 60 * 1000; // Moscow fixed offset UTC+3 (без летнего времени)\n\n// ---------- time helpers ----------\nfunction pad2(n) { return String(n).padStart(2, '0'); }\n\nfunction nowMsk() {\n  const d = new Date(Date.now() + TZ_OFFSET_MS);\n  const Y = d.getUTCFullYear();\n  const M = d.getUTCMonth() + 1;\n  const D = d.getUTCDate();\n  const h = d.getUTCHours();\n  const m = d.getUTCMinutes();\n  return {\n    Y, M, D, h, m,\n    ymd: `${Y}-${pad2(M)}-${pad2(D)}`,\n    hm: `${pad2(h)}:${pad2(m)}`,\n    isoMinute: `${Y}-${pad2(M)}-${pad2(D)} ${pad2(h)}:${pad2(m)}`,\n    epochLikeUTC: Date.UTC(Y, M - 1, D, h, m, 0, 0), // \"msk-as-utc\"\n  };\n}\n\n// ожидаем \"YYYY-MM-DD HH:mm\" (как у тебя в Log)\nfunction parseMskDateToEpochLikeUTC(s) {\n  if (!s || typeof s !== 'string') return null;\n  const m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})[ T](\\d{2}):(\\d{2})/);\n  if (!m) return null;\n  const Y = +m[1], Mo = +m[2], D = +m[3], H = +m[4], Mi = +m[5];\n  return Date.UTC(Y, Mo - 1, D, H, Mi, 0, 0); // \"msk-as-utc\"\n}\n\nfunction parseTimeHHMM(s) {\n  if (!s) return null;\n  const str = String(s).trim();\n  // поддержим HH:mm и HH:mm:ss\n  const m = str.match(/^(\\d{1,2}):(\\d{2})(?::(\\d{2}))?$/);\n  if (!m) return null;\n  const hh = +m[1], mm = +m[2];\n  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;\n  return { hh, mm, hm: `${pad2(hh)}:${pad2(mm)}` };\n}\n\nfunction monthStartEpochLikeUTC(now) {\n  return Date.UTC(now.Y, now.M - 1, 1, 0, 0, 0, 0);\n}\n\nfunction dueEpochLikeUTC(now, day, hh, mm) {\n  // due в текущем месяце (если day > кол-ва дней — JS сам перекинет, но лучше не делать так)\n  return Date.UTC(now.Y, now.M - 1, day, hh, mm, 0, 0);\n}\n\nfunction minutesDiff(aEpoch, bEpoch) {\n  return Math.floor((aEpoch - bEpoch) / 60000);\n}\n\nfunction toNumber(x) {\n  if (x === null || x === undefined) return null;\n  if (typeof x === 'number') return x;\n  const s = String(x).replace(/\\s/g, '').replace(',', '.');\n  const n = Number(s);\n  return Number.isFinite(n) ? n : null;\n}\n\n// ---------- get data from other nodes ----------\nconst reminders = ($items(\"Get Reminders\") || []).map(i => i.json);\nconst logRows = ($items(\"Get Log\") || []).map(i => i.json);\n\nconst now = nowMsk();\n\n// ---------- matching payment in Log ----------\nfunction buildRegex(matchText) {\n  if (!matchText) return null;\n  try {\n    return new RegExp(matchText, 'i'); // i = case-insensitive\n  } catch (e) {\n    // если в match_text кривой regex — не ломаем весь workflow\n    return null;\n  }\n}\n\nfunction logHasPayment({ regex, matchCategory, matchAmount }, startEpoch, endEpoch) {\n  for (const r of logRows) {\n    const dt = parseMskDateToEpochLikeUTC(r.Date || r.date);\n    if (!dt) continue;\n    if (dt < startEpoch || dt > endEpoch) continue;\n\n    const item = String(r.Item ?? r.item ?? '').toLowerCase();\n    const raw = String(r.Raw_Input ?? r.raw_input ?? r.Raw_Input ?? '').toLowerCase();\n    const cat = String(r.Category ?? r.category ?? '').toLowerCase();\n\n    if (matchCategory) {\n      const mc = String(matchCategory).trim().toLowerCase();\n      if (mc && !cat.includes(mc)) continue;\n    }\n\n    if (matchAmount !== null && matchAmount !== undefined && String(matchAmount).trim() !== '') {\n      const need = toNumber(matchAmount);\n      const got = toNumber(r.Amount ?? r.amount);\n      if (need !== null && got !== null) {\n        // допуск 1 рубль\n        if (Math.abs(got - need) > 1) continue;\n      }\n    }\n\n    if (regex) {\n      if (regex.test(item) || regex.test(raw) || regex.test(cat)) {\n        return true;\n      }\n    } else {\n      // если regex нет — считаем по title как fallback\n      // (лучше всегда заполнять match_text)\n      return true;\n    }\n  }\n  return false;\n}\n\n// ---------- main logic ----------\nconst out = [];\n\n// допуск по времени: если триггер каждую минуту, удобно держать окно 0..1 минуту\nconst TIME_TOLERANCE_MIN = 1;\n\nfor (const rem of reminders) {\n  const enabled = String(rem.enabled).toLowerCase() === 'true' || rem.enabled === true;\n  if (!enabled) continue;\n\n  const type = String(rem.type || '').trim();\n  if (type !== 'monthly_day') continue; // пока работаем только с monthly_day\n\n  const day = Number(rem.day);\n  if (!Number.isFinite(day) || day < 1 || day > 31) continue;\n\n  const t = parseTimeHHMM(rem.time);\n  if (!t) continue;\n\n  // 1) проверяем, что сейчас \"то самое\" время (с окном)\n  const dueEpoch = dueEpochLikeUTC(now, day, t.hh, t.mm);\n  const diffMin = Math.abs(minutesDiff(now.epochLikeUTC, dueEpoch));\n\n  // если сейчас не в окне — пропускаем\n  if (diffMin > TIME_TOLERANCE_MIN) continue;\n\n  // 2) анти-спам: если уже отправляли сегодня — пропускаем\n  const lastSent = String(rem.last_sent || '').trim();\n  if (lastSent.startsWith(now.ymd)) {\n    continue;\n  }\n\n  // 3) если оплата уже была до dueTime — НЕ отправляем\n  const startEpoch = monthStartEpochLikeUTC(now);\n  const regex = buildRegex(rem.match_text || rem.title || '');\n  const alreadyPaid = logHasPayment(\n    { regex, matchCategory: rem.match_category, matchAmount: rem.match_amount },\n    startEpoch,\n    dueEpoch\n  );\n\n  if (alreadyPaid) {\n    // можно (по желанию) записывать last_sent = \"PAID ...\" но лучше не трогать\n    continue;\n  }\n\n  // 4) отправляем\n  const chatId = String(rem.chat_id || '').trim();\n  const msg = String(rem.message || '').trim();\n  const title = String(rem.title || '').trim();\n  const reminderKey = String(rem.reminder_key || `${type}:${title}:${chatId}`).trim();\n\n  if (!chatId || !msg) continue;\n\n  out.push({\n    json: {\n      send: true,\n      chat_id: chatId,\n      message: msg,\n      title,\n      reminder_key: reminderKey,\n      last_sent: now.isoMinute,\n      now: now.isoMinute,\n    }\n  });\n}\n\n// если ничего не отправляем — вернём 1 item, чтобы workflow не падал\nif (!out.length) {\n  return [{ json: { send: false, reason: 'no reminders due now', now: now.isoMinute } }];\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        0
+      ],
+      "id": "559a5a14-b984-4164-85b3-543a6948168f",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "={{$json.message}}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        -16
+      ],
+      "id": "abc1fdc9-0160-4c52-b7b8-c89d8d151105",
+      "name": "Send a text message",
+      "webhookId": "60892889-88be-4851-8508-6ad054126d70",
+      "credentials": {
+        "telegramApi": {
+          "id": "4rzxiEwZ3qSixObw",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9017fb08-7dcf-4b75-ba2d-6da5140380e3",
+              "leftValue": "={{ $json.send }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        48
+      ],
+      "id": "3e01afcd-6603-4f29-b725-54567e0f8350",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2124995326,
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=2124995326"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        16
+      ],
+      "id": "4cc3f108-2492-4a98-ac30-510bfec0f8c0",
+      "name": "Get Log",
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2128811852,
+          "mode": "list",
+          "cachedResultName": "Reminders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=2128811852"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        96,
+        0
+      ],
+      "id": "19fd80a0-c2f3-4e65-ac1e-44411e1a325c",
+      "name": "Get Reminders",
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8",
+          "mode": "list",
+          "cachedResultName": "Finance Bot Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2128811852,
+          "mode": "list",
+          "cachedResultName": "Reminders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lhEyaOrZC9dWHOchBcNEhNEbanRDb9lOxuv0U1NYnB8/edit#gid=2128811852"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "reminder_key": "={{ $node[\"Code in JavaScript1\"].json.reminder_key }}",
+            "last_sent": "={{ $node[\"Code in JavaScript1\"].json.last_sent }}"
+          },
+          "matchingColumns": [
+            "reminder_key"
+          ],
+          "schema": [
+            {
+              "id": "enabled",
+              "displayName": "enabled",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "day",
+              "displayName": "day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_sent",
+              "displayName": "last_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "match_text",
+              "displayName": "match_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reminder_key",
+              "displayName": "reminder_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "match_category",
+              "displayName": "match_category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "match_amount",
+              "displayName": "match_amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        -32
+      ],
+      "id": "1e570f60-d0e0-4b8a-a8d5-40e75187717c",
+      "name": "Append or update row in sheet1",
+      "credentials": {
+        "googleApi": {
+          "id": "f8lG4xmO3JMJOVE4",
+          "name": "Google Service Account account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Log": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Reminders": {
+      "main": [
+        [
+          {
+            "node": "Get Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "8196e1c8-8786-438f-8b82-d79a408fcd57",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b504de80ba0606c80552d6dc8ecc8239b5302675c46b326da7a3ad3f504308a1"
+  },
+  "id": "LwvZrYXu3lpj8F4w",
+  "tags": []
+}
